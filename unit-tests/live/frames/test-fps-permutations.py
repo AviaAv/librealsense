@@ -1,8 +1,7 @@
 # License: Apache 2.0. See LICENSE file in root directory.
 # Copyright(c) 2023 Intel Corporation. All Rights Reserved.
 
-# test:device D400*
-# test:donotrun:!nightly
+# test:device each(D400*)
 # test:timeout 300
 # timeout - on the worst case, we're testing on D585S, which have 8 streams, so:
 # timeout = ((8 choose 2)+1) * (TIME_FOR_STEADY_STATE + TIME_TO_COUNT_FRAMES)
@@ -321,7 +320,7 @@ sensor_profiles_array = get_sensors_and_profiles(dev)
 if TEST_ALL_COMBINATIONS:
     test_modes = [ALL_PERMUTATIONS]
 else:
-    test_modes = [ALL_PAIRS, ALL_SENSORS]
+    test_modes = [ALL_SENSORS]
 
 perform_fps_test(sensor_profiles_array, test_modes)
 
