@@ -18,6 +18,9 @@
 
 #include <imgui_internal.h>
 
+#include <tinyfiledialogs.h>
+
+
 #define ARCBALL_CAMERA_IMPLEMENTATION
 #include <arcball_camera.h>
 #include <rsutils/string/trim-newlines.h>
@@ -2458,6 +2461,21 @@ namespace rs2
                         temp_cfg.set(configurations::record::default_path, path_str);
                     }
 
+                    ImGui::SameLine();
+                    if (ImGui::Button(" Select... ###select_record_folder")) 
+                    {
+                        //tinyfd_notifyPopup("la selected foldero esta", ret, nullptr); 
+                        auto ret = open_folder_dialog(); //tinyfd_selectFolderDialog(NULL,NULL);//this only works on safety for some reason
+                        if (ret)
+                        {
+                            try
+                            {
+                                std::string filename = ret;
+                                temp_cfg.set(configurations::viewer::commands_xml, filename);
+                            }
+                            catch (...) {}
+                        }
+                    }
                     ImGui::Separator();
 
                     ImGui::Text("ROS-bag Compression:");
@@ -2639,6 +2657,26 @@ namespace rs2
                             path_str = logpath;
                             temp_cfg.set(configurations::viewer::log_filename, path_str);
                         }
+
+                        ImGui::SameLine();
+                        if (ImGui::Button(" Select... ###select_log_file"))
+                        {
+                            //tinyfd_selectFolderDialog("please work", nullptr); //works only on safety???
+                            //auto ret = tinyfd_saveFileDialog("Savo Filo", nullptr, 0, nullptr, nullptr);
+                            auto ret = file_dialog_open(save_file, "Log file\0*.log\0", NULL, NULL);
+                            //tinyfd_notifyPopup("la selected foldero esta", ret, nullptr);
+                            if (ret)
+                            {
+                                try
+                                {
+                                    std::string filename = ret;
+                                    filename = rsutils::string::to_lower(filename);
+                                    if (!ends_with(filename, ".log")) filename += ".log";
+                                    temp_cfg.set(configurations::viewer::log_filename, filename);
+                                }
+                                catch (...) {}
+                            }
+                        }
                     }
                     if (log_to_console || log_to_file)
                     {
@@ -2675,6 +2713,22 @@ namespace rs2
                             path_str = logpath;
                             temp_cfg.set(configurations::viewer::commands_xml, path_str);
                         }
+
+                        ImGui::SameLine();
+                        if (ImGui::Button(" Select... ###select_commands_xml"))
+                        {
+                            //tinyfd_notifyPopup("la selected foldero esta", ret, nullptr);
+                            auto ret = file_dialog_open(open_file, "Extensible Markup Language (XML)\0*.xml\0", NULL, NULL);
+                            if (ret)
+                            {
+                                try
+                                {
+                                    std::string filename = ret;
+                                    temp_cfg.set(configurations::viewer::commands_xml, filename);
+                                }
+                                catch (...) {}
+                            }
+                        }
                     }
 
                     {
@@ -2689,6 +2743,22 @@ namespace rs2
                         {
                             path_str = logpath;
                             temp_cfg.set(configurations::viewer::hwlogger_xml, path_str);
+                        }
+
+                        ImGui::SameLine();
+                        if (ImGui::Button(" Select... ###select_HWLoggerEvents_xml"))
+                        {
+                            //tinyfd_notifyPopup("la selected foldero esta", ret, nullptr);
+                            auto ret = file_dialog_open(open_file, "Extensible Markup Language (XML)\0*.xml\0", NULL, NULL);
+                            if (ret)
+                            {
+                                try
+                                {
+                                    std::string filename = ret;
+                                    temp_cfg.set(configurations::viewer::hwlogger_xml, filename);
+                                }
+                                catch (...) {}
+                            }
                         }
                     }
 

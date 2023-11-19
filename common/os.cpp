@@ -169,6 +169,12 @@ Some auxillary functionalities might be affected. Please report this message if 
             return false;
     }
 
+    const char* open_folder_dialog(const char* title, const char* default_path)
+    {
+        return tinyfd_selectFolderDialog(title, default_path);
+    }
+
+
     const char* file_dialog_open(file_dialog_mode flags, const char* filters,
         const char* default_path, const char* default_name)
     {

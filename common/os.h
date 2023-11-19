@@ -43,6 +43,8 @@ namespace rs2
         save_file       = (1 << 1),
     };
 
+    const char* open_folder_dialog(const char* title = "Select folder", const char* default_path = nullptr);
+
     const char* file_dialog_open(file_dialog_mode flags, const char* filters, const char* default_path, const char* default_name);
 
     // Encapsulate helper function to resolve linking
