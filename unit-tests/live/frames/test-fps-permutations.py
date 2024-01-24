@@ -155,7 +155,9 @@ def generate_functions(sensor_profiles_dict, profile_name_fps_dict, profile_name
             global start_call_stopwatch
             if count_frames:
                 profile_name = frame.profile.stream_name()
-                log.i("frame arrived after {} on profile {}".format(start_call_stopwatch.get_elapsed(),profile_name))
+                log.i("frame arrived after {} on profile {}".format(start_call_stopwatch.get_elapsed(),profile_name),
+                      "lock status (0 for not?): ", profile_name_lock_dict[profile_name].locked(),
+                      "fps so far: ", profile_name_fps_dict[profile_name])
                 if profile_name_lock_dict[profile_name].locked():
                     log.i(f"{profile_name} is stuck waiting for lock!!")
                 with profile_name_lock_dict[profile_name]:  # lock and count frame
