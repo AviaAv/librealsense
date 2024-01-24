@@ -28,7 +28,7 @@ count_frames = False
 
 # tests parameters
 TEST_ALL_COMBINATIONS = False
-TIME_FOR_STEADY_STATE = 5
+TIME_FOR_STEADY_STATE = 20 # !!!!!!!!!!!!
 TIME_TO_COUNT_FRAMES = 5
 
 
@@ -156,6 +156,8 @@ def generate_functions(sensor_profiles_dict, profile_name_fps_dict, profile_name
             if count_frames:
                 profile_name = frame.profile.stream_name()
                 log.i("frame arrived after {} on profile {}".format(start_call_stopwatch.get_elapsed(),profile_name))
+                if profile_name_lock_dict[profile_name].locked():
+                    log.i(f"{profile_name} is stuck waiting for lock!!")
                 with profile_name_lock_dict[profile_name]:  # lock and count frame
                     profile_name_fps_dict[profile_name] += 1
 
