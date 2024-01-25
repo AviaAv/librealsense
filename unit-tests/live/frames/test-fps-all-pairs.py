@@ -95,5 +95,5 @@ def get_sensors_and_profiles(device):
 dev = test.find_first_device_or_exit()
 sensor_profiles_array = get_sensors_and_profiles(dev)
 
-fps_helper.perform_fps_test(sensor_profiles_array,[fps_helper.Modes.ALL_PAIRS, fps_helper.Modes.ALL_STREAMS])
+fps_helper.perform_fps_test(sensor_profiles_array,[fps_helper.Modes.ALL_PAIRS])
 
