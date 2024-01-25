@@ -2,7 +2,7 @@
 # Copyright(c) 2023 Intel Corporation. All Rights Reserved.
 
 # test:device each(D400*)
-# test:timeout 300
+# test:timeout 600
 # timeout - on the worst case, we're testing on D585S, which have 8 streams, so:
 # timeout = ((8 choose 2)+1) * (TIME_FOR_STEADY_STATE + TIME_TO_COUNT_FRAMES)
 # 8 choose 2 tests to do (one for each pair), plus one for all streams on
