@@ -68,7 +68,6 @@ def get_sensors_and_profiles(device):
                 resolutions.append(fps_helper.get_resolution(profile))
 
         resolutions.sort(reverse=True)
-        print(sensor, resolutions)
         profiles = []
 
         for resolution in resolutions:
@@ -95,5 +94,8 @@ def get_sensors_and_profiles(device):
 dev = test.find_first_device_or_exit()
 sensor_profiles_array = get_sensors_and_profiles(dev)
 
-fps_helper.perform_fps_test(sensor_profiles_array,[fps_helper.Modes.ALL_STREAMS])
+stream_names = [profiles.stream_name() for _, profiles in sensor_profiles_array]  # all stream names
+config_to_run = [stream_names]
+
+fps_helper.perform_fps_test(sensor_profiles_array, config_to_run)  # we want to run one test with all streams enabled
 
