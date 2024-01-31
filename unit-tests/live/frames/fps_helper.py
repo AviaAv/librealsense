@@ -117,6 +117,7 @@ def measure_fps(sensor_profiles_dict):
     for sensor, profiles in sensor_profiles_dict.items():
         sensor.open(profiles)
         sensor.start(funcs_dict[sensor])
+        time.sleep(2)
 
     # the core of the test - frames are counted during sleep when count_frames is on
     time.sleep(TIME_FOR_STEADY_STATE)
