@@ -7,7 +7,6 @@
 #include <string>
 #include <vector>
 #include <mutex>
-#include <imgui.h>
 
 
 struct object_in_frame

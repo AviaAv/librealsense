@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include "float3.h"
-
 namespace rs2 {
 
 struct plane {

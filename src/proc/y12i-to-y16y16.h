@@ -4,7 +4,6 @@
 #pragma once
 
 #include "synthetic-stream.h"
-#include "option.h"
 #include "image.h"
 
 namespace librealsense

@@ -3,7 +3,6 @@
 
 #pragma once
 #include "synthetic-stream.h"
-#include <iomanip>
 #include <map>
 
 namespace librealsense

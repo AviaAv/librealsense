@@ -5,7 +5,6 @@
 
 #include "ds/ds-private.h"
 #include <src/platform/backend-device-group.h>
-#include <src/core/notification.h>
 
 namespace librealsense
 {

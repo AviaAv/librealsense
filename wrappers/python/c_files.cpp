@@ -3,7 +3,6 @@ Copyright(c) 2017 Intel Corporation. All Rights Reserved. */
 
 #include "pyrealsense2.h"
 #include <librealsense2/rs.h>
-#include <iomanip>
 
 std::string make_pythonic_str(std::string str)
 {

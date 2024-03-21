@@ -4,7 +4,6 @@
 #pragma once
 
 #include "notifications.h"
-#include <rsutils/concurrency/concurrency.h>
 #include "../src/algo.h"
 
 #include <random>

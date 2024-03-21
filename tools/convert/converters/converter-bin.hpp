@@ -6,7 +6,6 @@
 
 
 #include <fstream>
-#include <cmath>
 
 #include "../converter.hpp"
 

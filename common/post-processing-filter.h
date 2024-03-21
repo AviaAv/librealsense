@@ -4,7 +4,6 @@
 #pragma once
 
 #include <librealsense2/rs.hpp>
-#include <model-views.h>
 #include <viewer.h>
 #include <rsutils/easylogging/easyloggingpp.h>
 

@@ -9,7 +9,6 @@
 #include "proc/hole-filling-filter.h"
 #include "proc/spatial-filter.h"
 
-#include <librealsense2/hpp/rs_sensor.hpp>
 #include <librealsense2/hpp/rs_processing.hpp>
 
 #include <rsutils/string/from.h>

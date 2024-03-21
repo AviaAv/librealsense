@@ -4,7 +4,6 @@
 #pragma once
 
 #include "device.h"
-#include "core/video.h"
 #include "ds-device-common.h"
 
 namespace librealsense

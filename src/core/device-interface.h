@@ -10,7 +10,6 @@
 #include <src/core/has-features-interface.h>
 
 #include <librealsense2/h/rs_sensor.h>
-#include <functional>
 #include <vector>
 #include <memory>
 #include <utility>  // std::pair

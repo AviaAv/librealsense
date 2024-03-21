@@ -25,6 +25,8 @@
 #include <comutil.h>
 #include <rsutils/string/from.h>
 
+#include "rsutils/os/hresult.h"
+
 #pragma comment(lib, "Sensorsapi.lib")
 #pragma comment(lib, "PortableDeviceGuids.lib")
 

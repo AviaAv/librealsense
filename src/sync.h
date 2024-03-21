@@ -7,7 +7,6 @@
 
 #include <librealsense2/h/rs_sensor.h>
 #include <rsutils/concurrency/concurrency.h>
-#include <stdint.h>
 #include <vector>
 #include <mutex>
 #include <memory>

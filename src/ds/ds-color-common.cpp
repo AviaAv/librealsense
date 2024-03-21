@@ -6,7 +6,6 @@
 #include <src/option.h>
 
 #include <src/platform/uvc-option.h>
-#include <src/ds/features/auto-exposure-roi-feature.h>
 #include <src/metadata-parser.h>
 
 #include <cstddef>

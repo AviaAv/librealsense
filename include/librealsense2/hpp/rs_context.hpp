@@ -6,7 +6,6 @@
 
 #include "rs_types.hpp"
 #include "rs_record_playback.hpp"
-#include "rs_processing.hpp"
 
 namespace rs2
 {

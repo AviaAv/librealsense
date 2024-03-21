@@ -4,8 +4,6 @@
 #include <librealsense2/rs.hpp> // Include RealSense Cross Platform API
 #include "example.hpp"          // Include short list of convenience functions for rendering
 
-#include <algorithm>            // std::min, std::max
-
 // Helper functions
 void register_glfw_callbacks(window& app, glfw_state& app_state);
 

@@ -6,7 +6,6 @@
 #include <src/ds/d400/d400-options.h>
 #include <src/ds/ds-private.h>
 #include <src/sensor.h>
-#include <librealsense2/hpp/rs_options.hpp>
 
 
 namespace librealsense {

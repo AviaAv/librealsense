@@ -6,7 +6,6 @@
 #include "rendering.h"
 
 #include "option.h"
-#include "tiny-profiler.h"
 
 static const char* vertex_shader_text =
 "#version 130\n"

@@ -3,7 +3,6 @@
 
 #include "post-processing-filters-list.h"
 #include "post-processing-block-model.h"
-#include <imgui_internal.h>
 
 #include "metadata-helper.h"
 #include "subdevice-model.h"

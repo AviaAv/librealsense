@@ -11,7 +11,6 @@
 #include "notification.h"
 #include "frame-holder.h"
 #include "stream-profile-interface.h"
-#include "notification.h"
 
 
 namespace librealsense

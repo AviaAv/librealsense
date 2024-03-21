@@ -13,7 +13,6 @@
 #include <map>
 
 #include "rendering.h"
-#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <imgui.h>
 

@@ -4,7 +4,6 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <algorithm>
 
 #include <librealsense2/rs.hpp>
 #include <rsutils/string/string-utilities.h>

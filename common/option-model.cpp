@@ -4,7 +4,6 @@
 #include "option-model.h"
 #include <librealsense2/rs_advanced_mode.hpp>
 #include <imgui.h>
-#include <imgui_internal.h>
 #include "device-model.h"
 #include "subdevice-model.h"
 

@@ -2,7 +2,6 @@
 // Copyright(c) 2015 Intel Corporation. All Rights Reserved.
 
 #define _USE_MATH_DEFINES
-#include <cmath>
 #include "image-avx.h"
 
 #ifndef ANDROID

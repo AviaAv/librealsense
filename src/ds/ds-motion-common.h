@@ -4,10 +4,11 @@
 #pragma once
 
 #include "ds-device-common.h"
-#include <rsutils/string/from.h>
 #include "ds-calib-parsers.h"
 
 #include <rsutils/lazy.h>
+
+#include "core/video.h"
 
 
 namespace librealsense

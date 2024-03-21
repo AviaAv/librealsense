@@ -2,7 +2,6 @@
 /* Copyright(c) 2019 Intel Corporation. All Rights Reserved. */
 #pragma once
 #include <string>
-#include <vector>
 #include <memory>
 #include "fw-logs-formating-options.h"
 #include "fw-log-data.h"

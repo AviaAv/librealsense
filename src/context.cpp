@@ -15,7 +15,6 @@
 #include <src/librealsense-exception.h>
 
 #include <rsutils/os/special-folder.h>
-#include <rsutils/os/executable-name.h>
 #include <rsutils/easylogging/easyloggingpp.h>
 #include <rsutils/string/from.h>
 #include <rsutils/json.h>

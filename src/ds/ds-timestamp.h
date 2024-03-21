@@ -6,7 +6,6 @@
 #include "ds-private.h"
 
 #include "algo.h"
-#include "error-handling.h"
 
 namespace librealsense
 {

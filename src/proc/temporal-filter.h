@@ -2,7 +2,6 @@
 // Copyright(c) 2017 Intel Corporation. All Rights Reserved.
 
 #pragma once
-#include "types.h"
 
 namespace librealsense
 {

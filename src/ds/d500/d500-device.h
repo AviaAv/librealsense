@@ -13,7 +13,6 @@
 #include "device.h"
 #include "global_timestamp_reader.h"
 #include "fw-update/fw-update-device-interface.h"
-#include "ds/d400/d400-auto-calibration.h"
 #include "ds/ds-options.h"
 
 #include "ds/ds-device-common.h"

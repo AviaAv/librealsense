@@ -5,7 +5,6 @@
 
 #include "option.h"
 #include "image-avx.h"
-#include "image.h"
 
 #define STB_IMAGE_STATIC
 #define STB_IMAGE_IMPLEMENTATION

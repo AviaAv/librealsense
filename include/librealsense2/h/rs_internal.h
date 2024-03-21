@@ -14,7 +14,6 @@
 extern "C" {
 #endif
 #include "rs_types.h"
-#include "rs_context.h"
 #include "rs_sensor.h"
 #include "rs_frame.h"
 #include "rs_option.h"

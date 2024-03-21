@@ -4,7 +4,6 @@
 #include <librealsense2/rs.hpp>
 #include "example-imgui.hpp"
 
-#include <sstream>
 #include <iostream>
 #include <fstream>
 #include <algorithm>

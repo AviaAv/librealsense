@@ -10,6 +10,8 @@
 #include <vector>
 #include <stdint.h>
 
+#include "usb-messenger.h"
+
 namespace librealsense
 {
     namespace platform

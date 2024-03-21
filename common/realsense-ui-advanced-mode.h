@@ -4,7 +4,6 @@
 #pragma once
 
 #include <librealsense2/rs_advanced_mode.hpp>
-#include <type_traits>
 #include <rsutils/string/string-utilities.h>
 
 #define TEXT_BUFF_SIZE 1024

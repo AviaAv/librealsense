@@ -10,7 +10,6 @@
 
 #include "proc/hdr-merge.h"
 #include "proc/sequence-id-filter.h"
-#include "proc/decimation-filter.h"
 #include "proc/threshold.h"
 #include "proc/hole-filling-filter.h"
 #include "proc/disparity-transform.h"

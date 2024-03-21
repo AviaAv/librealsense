@@ -8,7 +8,6 @@
 #include <string>
 #include <vector>
 #include "http-downloader.h"
-#include <sstream>
 #include <rsutils/version.h>
 
 namespace rs2

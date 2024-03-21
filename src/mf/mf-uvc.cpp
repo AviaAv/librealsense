@@ -33,11 +33,12 @@ The library will be compiled without the metadata support!\n")
 
 #include "Shlwapi.h"
 #include <Windows.h>
-#include <limits>
 #include "mfapi.h"
 #include <vidcap.h>
 #include <ksmedia.h>    // Metadata Extension
 #include <Mferror.h>
+
+#include "rsutils/os/hresult.h"
 
 #pragma comment(lib, "Shlwapi.lib")
 #pragma comment(lib, "mf.lib")

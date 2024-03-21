@@ -4,7 +4,6 @@
 #pragma once
 #include "rs_types.hpp"
 #include "rs_device.hpp"
-#include <array>
 #include  <string>
 
 namespace rs2

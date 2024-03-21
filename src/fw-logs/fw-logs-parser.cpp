@@ -2,7 +2,6 @@
 // Copyright(c) 2019 Intel Corporation. All Rights Reserved.
 #include "fw-logs-parser.h"
 #include <regex>
-#include <sstream>
 #include "fw-string-formatter.h"
 #include "stdint.h"
 

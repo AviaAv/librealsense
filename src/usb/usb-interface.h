@@ -5,7 +5,6 @@
 
 #include "usb-types.h"
 #include "usb-endpoint.h"
-#include "usb-messenger.h"
 
 #include <memory>
 #include <vector>

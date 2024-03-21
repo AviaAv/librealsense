@@ -7,7 +7,6 @@
 #include <vector>
 #include <functional>
 #include <string>
-#include <set>
 
 namespace rs2
 {

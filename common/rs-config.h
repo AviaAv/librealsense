@@ -7,7 +7,6 @@
 #include <map>
 #include <string>
 #include <sstream>
-#include <functional>
 
 namespace rs2
 {

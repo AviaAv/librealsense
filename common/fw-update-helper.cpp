@@ -14,7 +14,6 @@
 #include <vector>
 #include <string>
 #include <thread>
-#include <condition_variable>
 
 #ifdef INTERNAL_FW
 #include "common/fw/D4XX_FW_Image.h"

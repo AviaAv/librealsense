@@ -9,7 +9,6 @@
 #include <vector>
 #include <functional>
 #include <mutex>
-#include <queue>
 
 namespace librealsense
 {

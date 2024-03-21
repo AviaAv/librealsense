@@ -3,7 +3,6 @@
 #include <librealsense2/rs.hpp>
 #include <mutex>
 #include "example.hpp"          // Include short list of convenience functions for rendering
-#include <cstring>
 
 struct short3
 {

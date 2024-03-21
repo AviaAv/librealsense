@@ -6,7 +6,6 @@
 #include "extension.h"
 
 #include <librealsense2/h/rs_sensor.h>
-#include <functional>
 #include <memory>
 #include <vector>
 #include <ostream>

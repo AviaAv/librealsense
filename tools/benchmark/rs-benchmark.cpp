@@ -14,7 +14,6 @@
 #include <chrono>
 #include <numeric>
 #include <math.h>
-#include <fstream>
 
 #include "tclap/CmdLine.h"
 #include "example-utils.hpp"

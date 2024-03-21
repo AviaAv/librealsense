@@ -9,7 +9,6 @@
 #include <rsutils/easylogging/easyloggingpp.h>
 #include <rsutils/os/ensure-console.h>
 
-#include <stdexcept>
 #include <mutex>
 #include <fstream>
 

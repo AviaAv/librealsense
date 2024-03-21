@@ -11,7 +11,6 @@
 #include <stdint.h>
 #include <vector>
 #include <mutex>
-#include <deque>
 #include <cmath>
 #include <memory>
 

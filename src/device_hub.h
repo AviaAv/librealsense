@@ -7,7 +7,6 @@
 #include "device.h"
 #include <librealsense2/h/rs_context.h>  // RS2_PRODUCT_LINE_...
 
-#include <limits>
 #include <mutex>
 #include <condition_variable>
 #include <vector>

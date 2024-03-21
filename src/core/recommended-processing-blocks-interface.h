@@ -6,7 +6,6 @@
 #include "processing-block-interface.h"
 #include "extension.h"
 
-#include <functional>
 #include <vector>
 
 

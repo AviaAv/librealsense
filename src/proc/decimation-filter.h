@@ -4,7 +4,6 @@
 #pragma once
 
 #include "../include/librealsense2/hpp/rs_frame.hpp"
-#include "../include/librealsense2/hpp/rs_processing.hpp"
 #include "proc/synthetic-stream.h"
 
 namespace librealsense

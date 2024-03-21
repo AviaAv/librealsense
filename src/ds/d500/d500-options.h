@@ -4,7 +4,6 @@
 #pragma once
 
 #include "ds/ds-private.h"
-#include "core/options-container.h"
 #include "option.h"
 
 #include <rsutils/lazy.h>

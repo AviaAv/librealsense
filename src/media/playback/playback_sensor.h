@@ -9,8 +9,6 @@
 #include "../../sensor.h"
 #include "../../types.h"
 
-#include <rsutils/signal.h>
-
 
 namespace librealsense
 {

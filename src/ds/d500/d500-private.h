@@ -4,7 +4,6 @@
 #pragma once
 
 #include "ds/ds-private.h"
-#include <src/core/notification.h>
 
 namespace librealsense
 {

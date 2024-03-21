@@ -3,7 +3,6 @@
 #include "hw-monitor.h"
 #include "types.h"
 #include <iomanip>
-#include <limits>
 #include <sstream>
 
 
