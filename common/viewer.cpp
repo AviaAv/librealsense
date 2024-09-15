@@ -175,11 +175,6 @@ namespace rs2
 
             ImGui::PopStyleColor(2); // button color
 
-            auto apply = [&]() {
-                config_file::instance() = temp_cfg;
-                update_configuration();
-            };
-
             ImGui::PushStyleColor(ImGuiCol_Button, button_color);
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, button_color + 0.1f);
             ImGui::PushStyleColor(ImGuiCol_ButtonActive, button_color + 0.1f);
@@ -188,7 +183,6 @@ namespace rs2
 
             if( ImGui::Button( "Export", ImVec2( font_size * 8.f, 0 ) ) )
             {
-                apply();
                 if (!last_points)
                     error_message = "No depth data available";
                 else
