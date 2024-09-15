@@ -177,7 +177,7 @@ namespace rs2
 
             auto apply = [&]() {
                 config_file::instance() = temp_cfg;
-                update_configuration(false); // updating console log level might cause log prints to fail
+                update_configuration();
             };
 
             ImGui::PushStyleColor(ImGuiCol_Button, button_color);
@@ -794,7 +794,7 @@ namespace rs2
         _hidden_options.emplace(RS2_OPTION_REGION_OF_INTEREST);
     }
 
-    void viewer_model::update_configuration(bool update_min_severity)
+    void viewer_model::update_configuration()
     {
         rs2_error* e = nullptr;
         auto version = rs2_get_api_version(&e);
@@ -838,30 +838,28 @@ namespace rs2
             configurations::viewer::shading_mode, 2);
 
 #ifdef BUILD_EASYLOGGINGPP
-        if (update_min_severity) {
-            auto min_severity = (rs2_log_severity)config_file::instance().get_or_default(
-                configurations::viewer::log_severity, 2);
+        auto min_severity = (rs2_log_severity)config_file::instance().get_or_default(
+            configurations::viewer::log_severity, 2);
 
-            if (!_disable_log_to_console)
+        if( ! _disable_log_to_console )
+        {
+            if( config_file::instance().get_or_default(
+                configurations::viewer::log_to_console, false ) )
             {
-                if (config_file::instance().get_or_default(
-                    configurations::viewer::log_to_console, false))
-                {
-                    rs2::log_to_console(min_severity);
-                }
-                else
-                {
-                    rs2::log_to_console(RS2_LOG_SEVERITY_NONE);
-                }
+                rs2::log_to_console( min_severity );
             }
-            if (config_file::instance().get_or_default(
-                configurations::viewer::log_to_file, false))
+            else
             {
-                std::string filename = config_file::instance().get(
-                    configurations::viewer::log_filename);
+                rs2::log_to_console( RS2_LOG_SEVERITY_NONE );
+            }
+        }
+        if (config_file::instance().get_or_default(
+            configurations::viewer::log_to_file, false))
+        {
+            std::string filename = config_file::instance().get(
+                configurations::viewer::log_filename);
 
-                rs2::log_to_file(min_severity, filename.c_str());
-            }
+            rs2::log_to_file(min_severity, filename.c_str());
         }
 #endif
 
@@ -887,7 +885,7 @@ namespace rs2
         rs2_error* e = nullptr;
         not_model->add_log( "librealsense version: " + api_version_to_string( rs2_get_api_version( &e ) ) + "\n" );
 
-        update_configuration(true);
+        update_configuration();
 
         check_permissions();
         export_model exp_model = export_model::make_exporter("PLY", ".ply", "Polygon File Format (PLY)\0*.ply\0");
@@ -2890,7 +2888,7 @@ namespace rs2
                     };
                     if (reload_required) window.reload();
                     else if (refresh_required) window.refresh();
-                    update_configuration(true);
+                    update_configuration();
 
                     if (refresh_updates)
                         for (auto&& dev : devices)
