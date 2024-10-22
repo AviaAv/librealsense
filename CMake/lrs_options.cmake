@@ -30,7 +30,7 @@ option(FORCE_RSUSB_BACKEND "Use RS USB backend, mandatory for Win7/MacOS/Android
 option(FORCE_LIBUVC "Explicitly turn-on libuvc backend - deprecated, use FORCE_RSUSB_BACKEND instead" OFF)
 option(FORCE_WINUSB_UVC "Explicitly turn-on winusb_uvc (for win7) backend - deprecated, use FORCE_RSUSB_BACKEND instead" OFF)
 option(ANDROID_USB_HOST_UVC "Build UVC backend for Android - deprecated, use FORCE_RSUSB_BACKEND instead" OFF)
-# This feature requires OpenSSL installation on Linux/OSX, OSX normally does not come with OpenSSL integrated(Thats why default is OFF on OSX)
+# This feature requires OpenSSL installation on Linux/OSX, OSX normally does not come with OpenSSL integrated
 if (NOT APPLE)
     option(CHECK_FOR_UPDATES "Checks for versions updates" ON) 
 else()
@@ -48,3 +48,9 @@ option(BUILD_PC_STITCHING "Build pointcloud-stitching example" OFF)
 option(BUILD_WITH_DDS "Access camera devices through DDS topics (requires CMake 3.16.3)" OFF)
 option(BUILD_RS2_ALL "Build realsense2-all static bundle containing all realsense libraries (with BUILD_SHARED_LIBS=OFF)" ON)
  
+## Formatting notes for this file:
+## every option is listed as: <name> | <description> [comment] | <value>
+## where value is ON or OFF normally, and conditioned inside 'if/else' blocks
+## currently 'elseif' is not supported, stick to the if/else structure or modify the python code if needed
+## regular comments should be ABOVE their relevent option only
+## use double # for comments that should not show in the options doc
