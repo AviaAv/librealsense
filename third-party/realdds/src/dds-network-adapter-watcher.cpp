@@ -72,8 +72,14 @@ public:
     ~network_adapter_watcher_singleton()
     {
         _adapter_watcher.reset();  // signal the thread to finish
-        if( _th.joinable() )
-            _th.join();
+        try {
+            if (_th.joinable())
+                _th.join();
+        }
+        catch (std::system_error&)
+        {
+            //std::cerr << "join failed, thread might no longer be joinable";
+        }
     }
 
     void update_ips( ip_set * p_new_ips = nullptr, ip_set * p_old_ips = nullptr )
