@@ -1,4 +1,4 @@
-# use "uvicorn main:app --host 0.0.0.0 --port 8000" to run this backend and make it available as server side
+# use "uvicorn fastapi_backend:app --host 0.0.0.0 --port 8000" to run this backend and make it available as server side
 # by running 'ipconfig' and looking under "Wireless LAN adapter Wi-Fi" you can see the ipv4 address on your lan and
 # access as a client (even from another computer on the LAN) to <ip-address>:8000
 # <ip-address>:8000/index is a very basic webpage that allows you to see depth stream, and toggle it
