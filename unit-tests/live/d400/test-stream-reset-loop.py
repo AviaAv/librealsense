@@ -45,6 +45,7 @@ for i in range(max_iteration):
     #print("STARTING PIPE")
     pp = pipe.start(cb)
     dev = pp.get_device()
+    log.out(dev)
     time.sleep(3)
     #print("STOPPING PIPE")
     pipe.stop()
