@@ -3,7 +3,7 @@
 # access as a client (even from another computer on the LAN) to <ip-address>:8000
 # <ip-address>:8000/index is a very basic webpage that allows you to see depth stream, and toggle it
 
-from fastapi import FastAPI, Body
+from fastapi import FastAPI, Body, HTTPException
 import pyrealsense2 as rs
 import cv2
 import numpy as np
@@ -51,6 +51,133 @@ tags_metadata = [
     },
 ]
 
+def is_checkbox(opt_range):
+    # An option is considered a checkbox if the range is from 0 to 1 with a step of 1
+    return opt_range.max == 1.0 and opt_range.min == 0.0 and opt_range.step == 1.0
+
+def is_enum(opt, opt_range,s):
+    if opt_range.step < 0.9:
+        return False
+    i = opt_range.min
+    while i <= opt_range.max:
+        #print(s.get_option_value_description( opt, i ), "for option", opt.name, "val:", i)
+        if (s.get_option_value_description(opt, i)) is None:
+            return False
+        i += opt_range.step
+
+    return True
+
+
+def generate_option_script(opt, sensor, set_opt_path, get_opt_path):
+    opt_range = sensor.get_option_range(opt)
+
+    if is_enum(opt, opt_range, sensor):  # Enum -> Select Dropdown
+        return f"""
+            document.getElementById('set-{set_opt_path}').addEventListener('change', function(event) {{
+                fetch('/{set_opt_path}', {{
+                    method: 'POST',
+                    body: JSON.stringify(event.target.value),
+                    headers: {{ 'Content-Type': 'application/json' }}
+                }});
+            }});
+
+            fetch('/{get_opt_path}')
+                .then(response => response.json())
+                .then(data => {{
+                    let selectElem = document.getElementById('set-{set_opt_path}');
+                    let option = selectElem.querySelector(`option[value="${{data.val}}"]`);
+                    if (option) option.selected = true;
+                }});
+        """
+
+    elif is_checkbox(opt_range):  # Checkbox -> Binary Toggle
+        return f"""
+            document.getElementById('set-{set_opt_path}').addEventListener('change', function(event) {{
+                fetch('/{set_opt_path}', {{
+                    method: 'POST',
+                    body: JSON.stringify(event.target.checked ? 1 : 0),
+                    headers: {{ 'Content-Type': 'application/json' }}
+                }});
+            }});
+
+            fetch('/{get_opt_path}')
+                .then(response => response.json())
+                .then(data => {{
+                    document.getElementById('set-{set_opt_path}').checked = (data.val == 1);
+                }});
+        """
+
+    else:  # Regular Value -> Slider
+        return f"""
+            document.getElementById('set-{set_opt_path}').addEventListener('change', function(event) {{
+                fetch('/{set_opt_path}', {{
+                    method: 'POST',
+                    body: JSON.stringify(event.target.value),
+                    headers: {{ 'Content-Type': 'application/json' }}
+                }});
+            }});
+
+            fetch('/{get_opt_path}')
+                .then(response => response.json())
+                .then(data => {{
+                    document.getElementById('set-{set_opt_path}').value = data.val;
+                }});
+        """
+
+def draw_option(opt, s, set_opt_path):
+    opt_range = s.get_option_range(opt)
+    # Check if the option is an enum
+    if is_enum(opt, opt_range, s):
+        return draw_combobox(opt,s, set_opt_path)
+    # Check if the option is a checkbox
+    elif is_checkbox(opt_range):
+        return draw_checkbox(opt_range, set_opt_path)
+    # Otherwise, draw a slider
+    else:
+        return draw_slider(opt_range, set_opt_path)
+
+
+def get_combo_labels(opt, opt_range, s):
+    selected = None
+    counter = 0
+    labels = []
+    min = int(opt_range.min)
+    max = int(opt_range.max)
+    step = int(opt_range.step)
+    # Iterate through the range to get labels
+    for i in range(min, max + 1, step):
+        label = s.get_option_value_description(opt, i)  # Replace "example_option" with the actual option name if needed
+        labels.append(label)
+
+        # Check the type of the value and determine if it is selected
+        if isinstance(opt_range.default, str):
+            if label == opt_range.default:
+                selected = counter
+        else:
+            if abs(i - opt_range.default) < 0.001:
+                selected = counter
+
+        counter+=1
+
+    return labels, selected
+
+def draw_combobox(opt, s, set_opt_path):
+    opt_range = s.get_option_range(opt)
+    options, selected = get_combo_labels(opt, opt_range, s)
+
+    options_html = ''.join(
+        [f'<option value="{label}" {"selected" if i == selected else ""}>{label}</option>' for i, label in enumerate(options)]
+    )
+    selected_str = next(label[i] for i, label in enumerate(options))
+    return f'<select id="set-{set_opt_path}">Auto{options_html}</select>'
+
+def draw_checkbox(opt_range, set_opt_path):
+    checked = 'checked' if opt_range.default else ''
+    return f'<input type="checkbox" id="set-{set_opt_path}" {checked}>'
+
+def draw_slider(opt_range, set_opt_path):
+    return f'<input type="range" id="set-{set_opt_path}" value="{opt_range.default}" min="{opt_range.min}" max="{opt_range.max}" step="{opt_range.step}">'
+
 
 app = FastAPI(
     title="RealSense API",
@@ -80,66 +207,64 @@ pipeline.start(config)
 colorizer = rs.colorizer()
 dev = pipeline.get_active_profile().get_device()
 
-print(dev.query_sensors())
 sensors = dev.query_sensors()
 exposure_inputs = ""
 exposure_input_scripts = ""
 
 for s in sensors:
     base_path = s.name.replace(' ', '_')
-    set_exp_path = f"{base_path}_exposure"
-    get_exp_path = f"{base_path}_exposure/get"
-    print(base_path, set_exp_path, get_exp_path)
-    
-    # TODO: we can iterate over the options like so:
-    # print(f"Supported options for {s.name}: {[opt for opt in s.get_supported_options()]} ")
+    print(base_path)
 
-    def create_routes(sensor):
-        global exposure_inputs, exposure_input_scripts
+    for opt in s.get_supported_options():
+        opt_name = opt.name
+        set_opt_path = f"{base_path}_{opt_name}"
+        get_opt_path = set_opt_path + "/get"
 
-        def get_sensor_name():
-            return {"message": sensor.name}
 
-        def get_exposure():
-            exposure = sensor.get_option(rs.option.exposure)
-            return {"message": f"Exposure is {exposure}", "val" : exposure}
+        def create_routes(sensor, option):
+            global exposure_inputs, exposure_input_scripts
 
-        def set_exposure(exposure: int = Body(...)):
-            sensor.set_option(rs.option.exposure, exposure)
-            return {"message": f"Exposure set to {exposure}", "val" : exposure}
+            def get_sensor_name():
+                return {"message": sensor.name}
 
-        app.add_api_route(f"/{base_path}", get_sensor_name, methods=["GET"], tags=["camera-controls"])
-        if s.supports(rs.option.exposure): # we probably can automate it iterating for every option
-            app.add_api_route(f"/{get_exp_path}", get_exposure, methods=["GET"], tags=["camera-controls"])
-            app.add_api_route(f"/{set_exp_path}", set_exposure, methods=["POST"], tags=["camera-controls"])
+            def get_option():
+                value = sensor.get_option(option)
+                return {"message": f"{option.name} is {value}", "val": value}
 
-            exposure_inputs += f"""
-                Set {s.name} exposure:
-                <input type="number" id="set-{base_path}-exposure" value="0">
-                <br/>
-                """
+            def set_option(value= Body(...)):
+                opt_range = sensor.get_option_range(option)
+                if is_enum(option, opt_range, sensor):
+                    # Convert string label back to numerical value
+                    possible_values = range(int(opt_range.min), int(opt_range.max) + 1, int(opt_range.step))
+                    for possible_value in possible_values:
+                        if sensor.get_option_value_description(option, possible_value) == value:
+                            value = possible_value
+                            break
+                    else:
+                        raise HTTPException(status_code=400, detail=f"Invalid enum value: {value}")
 
-            exposure_input_scripts += f"""
-                document.getElementById('set-{base_path}-exposure').addEventListener('input', function(event) {{
-                    const exposureValue = event.target.value;
-                    fetch('/{set_exp_path}', {{
-                        method: 'POST',
-                        body: exposureValue,
-                        headers: {{
-                            'Content-Type': 'text/plain'
-                        }}
-                    }});
-                }});
-        
-                fetch('/{get_exp_path}')
-                    .then(response => response.json())
-                    .then(data => {{
-                        document.getElementById('set-{base_path}-exposure').value = data.val;
-                    }});
-                """
+                sensor.set_option(option, int(value))
+                return {"message": f"{option.name} set to {value}", "val": value}
 
-    create_routes(s)
+            app.add_api_route(f"/{base_path}", get_sensor_name, methods=["GET"], tags=["camera-controls"])
+            if sensor.supports(option): # we probably can automate it iterating for every option
+                app.add_api_route(f"/{get_opt_path}", get_option, methods=["GET"], tags=["camera-controls"])
+                app.add_api_route(f"/{set_opt_path}", set_option, methods=["POST"], tags=["camera-controls"])
 
+                exposure_inputs += f"""
+                    Set {sensor.name} {option.name}:
+                    {draw_option(option,sensor, set_opt_path)}
+                    <br/>
+                    """
+
+                exposure_input_scripts += generate_option_script(option, s, set_opt_path, get_opt_path)
+
+
+        create_routes(s, opt)
+
+    exposure_inputs += "----------------------<br/>"
+
+print("ok")
 # Flag to track the camera status
 camera_on = True
 show_depth = True
