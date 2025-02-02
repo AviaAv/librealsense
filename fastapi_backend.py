@@ -208,13 +208,16 @@ colorizer = rs.colorizer()
 dev = pipeline.get_active_profile().get_device()
 
 sensors = dev.query_sensors()
-exposure_inputs = ""
-exposure_input_scripts = ""
+html_inputs = ""
+html_inputs_scripts = ""
 
+html_inputs += '<div style="display: flex; flex-wrap: wrap; justify-content: space-between;">'
 for s in sensors:
     base_path = s.name.replace(' ', '_')
     print(base_path)
 
+    html_inputs += f'<div style="flex: 1; min-width: 300px; margin: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">'
+    html_inputs += f'<h2>{s.name}</h2>'
     for opt in s.get_supported_options():
         opt_name = opt.name
         set_opt_path = f"{base_path}_{opt_name}"
@@ -222,7 +225,7 @@ for s in sensors:
 
 
         def create_routes(sensor, option):
-            global exposure_inputs, exposure_input_scripts
+            global html_inputs, html_inputs_scripts
 
             def get_sensor_name():
                 return {"message": sensor.name}
@@ -251,18 +254,23 @@ for s in sensors:
                 app.add_api_route(f"/{get_opt_path}", get_option, methods=["GET"], tags=["camera-controls"])
                 app.add_api_route(f"/{set_opt_path}", set_option, methods=["POST"], tags=["camera-controls"])
 
-                exposure_inputs += f"""
-                    Set {sensor.name} {option.name}:
-                    {draw_option(option,sensor, set_opt_path)}
-                    <br/>
-                    """
+                html_inputs += f"""
+                    <div style="margin: 10px 0; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="margin-right: 10px;">Set {sensor.name} {option.name}:</span>
+                        <div style="flex-grow: 1; text-align: right;">
+                            {draw_option(option, sensor, set_opt_path)}
+                        </div>
+                    </div>
+                """
 
-                exposure_input_scripts += generate_option_script(option, s, set_opt_path, get_opt_path)
-
+                html_inputs_scripts += generate_option_script(option, s, set_opt_path, get_opt_path)
 
         create_routes(s, opt)
 
-    exposure_inputs += "----------------------<br/>"
+    html_inputs += '</div>'  # End of sensor options container
+
+# Close the main container for all sensors
+html_inputs += '</div>'
 
 print("ok")
 # Flag to track the camera status
@@ -379,7 +387,7 @@ def index():
         <button type="submit" name="toggle_color">Toggle Color Stream</button>
         <button type="submit" name="toggle_depth">Toggle Depth Stream</button>
     </form>
-    {exposure_inputs}
+    {html_inputs}
     <script>
     document.getElementById('toggle-camera-form').addEventListener('submit', function(event) {{
         event.preventDefault();
@@ -395,7 +403,7 @@ def index():
             document.getElementById('depth-stream').src = '/depth_stream?' + new Date().getTime(); 
         }});
     }});
-    {exposure_input_scripts}
+    {html_inputs_scripts}
     </script>
     </body>
     </html>
