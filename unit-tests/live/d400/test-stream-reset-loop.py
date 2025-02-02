@@ -53,7 +53,7 @@ for i in range(max_iteration):
     if i % 10 == 0:
         print("perform HW reset")
         dev.hardware_reset()
-        time.sleep(0.2) # sleep to make sure the device is removed
+        time.sleep(0.5) # sleep to make sure the device is removed
         # del dev
         # del pp
         # time.sleep(0.5)
