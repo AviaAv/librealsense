@@ -201,11 +201,19 @@ app = FastAPI(
 # Initialize the RealSense camera
 pipeline = rs.pipeline()
 config = rs.config()
-config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
-config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
-pipeline.start(config)
+# config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
+# config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+pipeline_profile = pipeline.start(config)
+queue_capacity = 1
 colorizer = rs.colorizer()
-dev = pipeline.get_active_profile().get_device()
+#depth_frames_queue = rs.frame_queue(queue_capacity)
+#color_frames_queue = rs.frame_queue(queue_capacity)
+
+context = rs.context()
+dev = pipeline_profile.get_device() #context.query_devices()[0]
+depth_sensor = dev.first_depth_sensor()
+print(dir(dev))
+print(dir(depth_sensor))
 
 sensors = dev.query_sensors()
 html_inputs = ""
@@ -216,19 +224,23 @@ for s in sensors:
     base_path = s.name.replace(' ', '_')
     print(base_path)
 
+    def get_sensor_name():
+        global s
+        return {"message": s.name}
+
+    app.add_api_route(f"/{base_path}", get_sensor_name, methods=["GET"], tags=[s.name])
+
     html_inputs += f'<div style="flex: 1; min-width: 300px; margin: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">'
     html_inputs += f'<h2>{s.name}</h2>'
     for opt in s.get_supported_options():
         opt_name = opt.name
-        set_opt_path = f"{base_path}_{opt_name}"
-        get_opt_path = set_opt_path + "/get"
+        set_opt_path = f"{base_path}/set_{opt_name}"
+        get_opt_path = f"{base_path}/get_{opt_name}"
 
 
         def create_routes(sensor, option):
             global html_inputs, html_inputs_scripts
 
-            def get_sensor_name():
-                return {"message": sensor.name}
 
             def get_option():
                 value = sensor.get_option(option)
@@ -249,10 +261,9 @@ for s in sensors:
                 sensor.set_option(option, int(value))
                 return {"message": f"{option.name} set to {value}", "val": value}
 
-            app.add_api_route(f"/{base_path}", get_sensor_name, methods=["GET"], tags=["camera-controls"])
             if sensor.supports(option): # we probably can automate it iterating for every option
-                app.add_api_route(f"/{get_opt_path}", get_option, methods=["GET"], tags=["camera-controls"])
-                app.add_api_route(f"/{set_opt_path}", set_option, methods=["POST"], tags=["camera-controls"])
+                app.add_api_route(f"/{get_opt_path}", get_option, methods=["GET"], tags=[s.name])
+                app.add_api_route(f"/{set_opt_path}", set_option, methods=["POST"], tags=[s.name])
 
                 html_inputs += f"""
                     <div style="margin: 10px 0; display: flex; justify-content: space-between; align-items: center;">
@@ -275,8 +286,8 @@ html_inputs += '</div>'
 print("ok")
 # Flag to track the camera status
 camera_on = True
-show_depth = True
-show_color = True
+show_depth = False
+show_color = False
 
 @app.get("/", tags=["root"],
          description="Print Hello RealSense",
@@ -298,13 +309,27 @@ def yield_empty_frame():
     yield (b'--frame\r\n'
            b'Content-Type: image/jpeg\r\n\r\n' + b'\r\n')
 
+# probably better to use rs.frame_queue
+# either with this usage or frame_queue we have a small lag with both the streams on
+# currently, only having one frame in each queue for now
+depth_frames_queue = []
+color_frames_queue = []
+
+def cb(frame):
+    global depth_frames_queue, color_frames_queue
+    if frame.get_profile().stream_name() == "Depth":
+        depth_frames_queue = [frame]
+    elif frame.get_profile().stream_name() == "Color":
+        color_frames_queue = [frame]
+
 @app.get("/color_stream", tags=["streams"])
 def color_feed():
     def generate_frames():
-        global camera_on, show_color
+        global camera_on, show_color, color_frames_queue
         while camera_on and show_color:
             frames = pipeline.wait_for_frames()
             color_frame = frames.get_color_frame()
+            #color_frame = color_frames_queue.pop(0) if len(color_frames_queue) > 0 else None
             if not color_frame:
                 continue
 
@@ -320,10 +345,11 @@ def color_feed():
 @app.get("/depth_stream", tags=["streams"])
 def depth_feed():
     def generate_frames():
-        global camera_on, show_depth
+        global camera_on, show_depth, depth_frames_queue
         while camera_on and show_depth:
             frames = pipeline.wait_for_frames()
             depth_frame = frames.get_depth_frame()
+            #depth_frame = depth_frames_queue.pop(0) if len(depth_frames_queue) > 0 else None
             if not depth_frame:
                 continue
 
@@ -336,22 +362,55 @@ def depth_feed():
 
     return StreamingResponse(generate_frames(), media_type="multipart/x-mixed-replace; boundary=frame")
 
-
 def status_to_on_off(property_on):
     return 'on' if property_on else 'off'
 
-
 @app.post("/toggle_depth", tags=["camera-controls"])
 def toggle_depth():
-    global show_depth
+    global show_depth, dev, depth_frames_queue, config, pipeline, pipeline_profile
     show_depth = not show_depth
-    return {"message": f"Camera set depth to be {status_to_on_off(show_depth)}"}
+    depth_sensor = dev.first_depth_sensor()
+    if show_depth:
+        depth_profiles = (p for p in depth_sensor.profiles if p.stream_type() == rs.stream.depth and p.fps() == 30)
+        depth_profile = next(depth_profiles)
+        print("chosen profile:", depth_profile)
+        #pipeline.stop()
+        config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
+        #depth_sensor.open(depth_profile)
+        #depth_sensor.start(cb)
+    else:
+        #pipeline.stop()
+        config.disable_stream(rs.stream.depth)
+        #depth_sensor.stop()
+        #depth_sensor.close()
+    #pipeline_profile = pipeline.start(config)
+    #dev = pipeline_profile.get_device()
 
+    return {"message": f"Camera set depth to be {status_to_on_off(show_depth)}"}
 
 @app.post("/toggle_color", tags=["camera-controls"])
 def toggle_color():
-    global show_color
+    global show_color, dev, color_frames_queue, config, pipeline, pipeline_profile
     show_color = not show_color
+    color_sensor = dev.first_color_sensor()
+    if show_color:
+        color_profiles = (p for p in color_sensor.profiles if p.stream_type() == rs.stream.color
+                          and p.fps() == 30 and p.format() == rs.format.bgr8)
+
+        color_profile = next(color_profiles)
+        print("chosen profile:", color_profile)
+        #pipeline.stop()
+        #config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+        #color_sensor.open(color_profile)
+        #color_sensor.start(cb)
+    else:
+        #pipeline.stop()
+        #config.disable_stream(rs.stream.color)
+        #color_sensor.stop()
+        #color_sensor.close()
+
+    #pipeline_profile = pipeline.start(config)
+    #dev = pipeline_profile.get_device()
     return {"message": f"Camera set color to be {status_to_on_off(show_color)}"}
 
 
@@ -360,9 +419,11 @@ def toggle_camera():
     global camera_on
     camera_on = not camera_on
     if camera_on:
-        pipeline.start(config)
+        pass
+        #pipeline.start(config)
     else:
-        pipeline.stop()
+        pass
+        #pipeline.stop()
     return {"message": f"Camera has set to be {status_to_on_off(camera_on)}"}
 
 
