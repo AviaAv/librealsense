@@ -199,22 +199,63 @@ app = FastAPI(
 
 
 # Initialize the RealSense camera
-pipeline = rs.pipeline()
+ctx = rs.context()
+dev = ctx.query_devices()[0]
+pipeline = rs.pipeline(ctx)
 config = rs.config()
-config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
-config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+streams = {}
+for sensor_ in dev.query_sensors():
+    pass
+    print(dir(sensor_))
+    # print(sensor_.get_stream_profiles())
+    # print(dir(sensor_.get_stream_profiles()[0]))
+    # print(sensor_.profiles)
+    # print(dir(sensor_.profiles[0]))
+
+    streams[sensor_.name] = {
+
+    }
+streams = {
+    "depth":
+        {
+            "frame_getter": lambda frames: frames.get_depth_frame(),
+            "frame_processor": lambda frame: colorizer.colorize(frame).get_data(),
+            "config": (rs.stream.depth, 640, 480, rs.format.z16, 30)
+        },
+    "color":
+        {
+            "frame_getter": lambda frames: frames.get_color_frame(),
+            "frame_processor": lambda frame: frame.get_data(),
+            "config": (rs.stream.color, 640, 480, rs.format.bgr8, 30)
+        }
+}
+
+for stream in streams:
+    config.enable_stream(*streams[stream]["config"])
+#config.enable_stream(rs.stream.motion)
+#config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
+#config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+print(rs.format.combined_motion)
+print(dir(rs.format))
+print(rs.stream.motion)
+print(dir(rs.stream))
+#config.enable_stream(rs.stream.accel)
+config.enable_stream(rs.stream.gyro)
 pipeline.start(config)
 colorizer = rs.colorizer()
-dev = pipeline.get_active_profile().get_device()
+#dev = pipeline.get_active_profile().get_device()
 
 sensors = dev.query_sensors()
+flags = {} #{ f"{s.name}" : True for s in sensors}
 html_inputs = ""
 html_inputs_scripts = ""
 
 html_inputs += '<div style="display: flex; flex-wrap: wrap; justify-content: space-between;">'
 for s in sensors:
     base_path = s.name.replace(' ', '_')
-    print(base_path)
+    flags[base_path] = True
+    print(base_path, flags)
+    #print(dir(s))
 
     html_inputs += f'<div style="flex: 1; min-width: 300px; margin: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">'
     html_inputs += f'<h2>{s.name}</h2>'
@@ -222,7 +263,6 @@ for s in sensors:
         opt_name = opt.name
         set_opt_path = f"{base_path}_{opt_name}"
         get_opt_path = set_opt_path + "/get"
-
 
         def create_routes(sensor, option):
             global html_inputs, html_inputs_scripts
@@ -268,6 +308,57 @@ for s in sensors:
         create_routes(s, opt)
 
     html_inputs += '</div>'  # End of sensor options container
+
+    def create_streams_endpoints(sensor=s, sensor_name=base_path):
+        def sensor_feed():
+            def generate_frames():
+                global camera_on, flags
+                while camera_on and flags[sensor_name]:
+                    frames = pipeline.wait_for_frames()
+                    frame = None
+                    # this section can be improved
+                    if sensor.is_depth_sensor():
+                        frame = frames.get_depth_frame()
+                        frame = colorizer.colorize(frame).get_data()  # assuming no throw if 'not frame'
+                    elif sensor.is_color_sensor():
+                        frame = frames.get_color_frame().get_data()
+                    elif sensor.is_motion_sensor():
+                        motion_data = None
+                        for f in frames:
+                            if f.is_motion_frame():
+                                motion_data = (f.as_motion_frame().get_motion_data())
+                                # frame = f
+                                #break
+                        #print([i for i in motion_data])
+                        text = f"x: {motion_data.x:.6f}\ny: {motion_data.y:.6f}\nz: {motion_data.z:.6f}".split("\n")
+                        frame = np.zeros((480, 640, 3), dtype=np.uint8) # probably better load an image instead: image = cv2.imread(path)
+                        y0, dy = 50, 40
+                        for i, coord in enumerate(text):
+                            y = y0 + dy*i
+                            cv2.putText(frame, coord, (10, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                    else:
+                        pass
+
+                    if not sensor.is_motion_sensor() and not frame:  # motion should have its own checks...
+                        continue
+
+                    frame = np.asanyarray(frame)
+                    yield from encode_and_yield(frame)
+
+                # if camera off, return empty frame
+                yield from yield_empty_frame()
+
+            return StreamingResponse(generate_frames(), media_type="multipart/x-mixed-replace; boundary=frame")
+
+        def toggle_sensor():
+            global flags
+            flags[sensor_name] = not flags[sensor_name]
+            return {"message": f"Camera set depth to be {status_to_on_off(flags[sensor_name])}"}
+
+        app.add_api_route(f"/{sensor_name}_stream", sensor_feed, methods=["GET"], tags=["camera-controls"])
+        app.add_api_route(f"/toggle_{sensor_name}", toggle_sensor, methods=["POST"], tags=["camera-controls"])
+
+    create_streams_endpoints()
 
 # Close the main container for all sensors
 html_inputs += '</div>'
