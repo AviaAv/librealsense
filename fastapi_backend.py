@@ -399,61 +399,61 @@ def yield_empty_frame():
     yield (b'--frame\r\n'
            b'Content-Type: image/jpeg\r\n\r\n' + b'\r\n')
 
-@app.get("/color_stream", tags=["streams"])
-def color_feed():
-    def generate_frames():
-        global camera_on, show_color
-        while camera_on and show_color:
-            frames = pipeline.wait_for_frames()
-            color_frame = frames.get_color_frame()
-            if not color_frame:
-                continue
-
-            # Convert to numpy array
-            frame = np.asanyarray(color_frame.get_data())
-            yield from encode_and_yield(frame)
-
-        # if camera off, return empty frame
-        yield from yield_empty_frame()
-
-    return StreamingResponse(generate_frames(), media_type="multipart/x-mixed-replace; boundary=frame")
-
-@app.get("/depth_stream", tags=["streams"])
-def depth_feed():
-    def generate_frames():
-        global camera_on, show_depth
-        while camera_on and show_depth:
-            frames = pipeline.wait_for_frames()
-            depth_frame = frames.get_depth_frame()
-            if not depth_frame:
-                continue
-
-            # Convert to numpy array
-            frame = np.asanyarray(colorizer.colorize(depth_frame).get_data())
-            yield from encode_and_yield(frame)
-
-        # if camera off, return empty frame
-        yield from yield_empty_frame()
-
-    return StreamingResponse(generate_frames(), media_type="multipart/x-mixed-replace; boundary=frame")
+# @app.get("/color_stream", tags=["streams"])
+# def color_feed():
+#     def generate_frames():
+#         global camera_on, show_color
+#         while camera_on and show_color:
+#             frames = pipeline.wait_for_frames()
+#             color_frame = frames.get_color_frame()
+#             if not color_frame:
+#                 continue
+#
+#             # Convert to numpy array
+#             frame = np.asanyarray(color_frame.get_data())
+#             yield from encode_and_yield(frame)
+#
+#         # if camera off, return empty frame
+#         yield from yield_empty_frame()
+#
+#     return StreamingResponse(generate_frames(), media_type="multipart/x-mixed-replace; boundary=frame")
+#
+# @app.get("/depth_stream", tags=["streams"])
+# def depth_feed():
+#     def generate_frames():
+#         global camera_on, show_depth
+#         while camera_on and show_depth:
+#             frames = pipeline.wait_for_frames()
+#             depth_frame = frames.get_depth_frame()
+#             if not depth_frame:
+#                 continue
+#
+#             # Convert to numpy array
+#             frame = np.asanyarray(colorizer.colorize(depth_frame).get_data())
+#             yield from encode_and_yield(frame)
+#
+#         # if camera off, return empty frame
+#         yield from yield_empty_frame()
+#
+#     return StreamingResponse(generate_frames(), media_type="multipart/x-mixed-replace; boundary=frame")
 
 
 def status_to_on_off(property_on):
     return 'on' if property_on else 'off'
 
 
-@app.post("/toggle_depth", tags=["camera-controls"])
-def toggle_depth():
-    global show_depth
-    show_depth = not show_depth
-    return {"message": f"Camera set depth to be {status_to_on_off(show_depth)}"}
-
-
-@app.post("/toggle_color", tags=["camera-controls"])
-def toggle_color():
-    global show_color
-    show_color = not show_color
-    return {"message": f"Camera set color to be {status_to_on_off(show_color)}"}
+# @app.post("/toggle_depth", tags=["camera-controls"])
+# def toggle_depth():
+#     global show_depth
+#     show_depth = not show_depth
+#     return {"message": f"Camera set depth to be {status_to_on_off(show_depth)}"}
+#
+#
+# @app.post("/toggle_color", tags=["camera-controls"])
+# def toggle_color():
+#     global show_color
+#     show_color = not show_color
+#     return {"message": f"Camera set color to be {status_to_on_off(show_color)}"}
 
 
 @app.post("/toggle_camera", tags=["camera-controls"])
