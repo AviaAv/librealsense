@@ -199,18 +199,18 @@ app = FastAPI(
 
 
 # Initialize the RealSense camera
-pipeline = rs.pipeline()
+# pipeline = rs.pipeline()
 config = rs.config()
 # config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
 # config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
-pipeline_profile = pipeline.start(config)
+# pipeline_profile = pipeline.start(config)
 queue_capacity = 1
 colorizer = rs.colorizer()
 #depth_frames_queue = rs.frame_queue(queue_capacity)
 #color_frames_queue = rs.frame_queue(queue_capacity)
 
 context = rs.context()
-dev = pipeline_profile.get_device() #context.query_devices()[0]
+dev = context.query_devices()[0] #pipeline_profile.get_device() #context.query_devices()[0]
 depth_sensor = dev.first_depth_sensor()
 print(dir(dev))
 print(dir(depth_sensor))
@@ -312,26 +312,28 @@ def yield_empty_frame():
 # probably better to use rs.frame_queue
 # either with this usage or frame_queue we have a small lag with both the streams on
 # currently, only having one frame in each queue for now
-depth_frames_queue = []
-color_frames_queue = []
+depth_frames_queue = None
+color_frames_queue = None
 
-def cb(frame):
-    global depth_frames_queue, color_frames_queue
-    if frame.get_profile().stream_name() == "Depth":
-        depth_frames_queue = [frame]
-    elif frame.get_profile().stream_name() == "Color":
-        color_frames_queue = [frame]
+def depth_cb(frame):
+    global depth_frames_queue
+    depth_frames_queue = frame
+
+def color_cb(frame):
+    global color_frames_queue
+    color_frames_queue = frame
 
 @app.get("/color_stream", tags=["streams"])
 def color_feed():
     def generate_frames():
         global camera_on, show_color, color_frames_queue
         while camera_on and show_color:
-            frames = pipeline.wait_for_frames()
-            color_frame = frames.get_color_frame()
-            #color_frame = color_frames_queue.pop(0) if len(color_frames_queue) > 0 else None
+            # frames = pipeline.wait_for_frames()
+            # color_frame = frames.get_color_frame()
+            color_frame = color_frames_queue
             if not color_frame:
                 continue
+            color_frames_queue = None
 
             # Convert to numpy array
             frame = np.asanyarray(color_frame.get_data())
@@ -347,14 +349,15 @@ def depth_feed():
     def generate_frames():
         global camera_on, show_depth, depth_frames_queue
         while camera_on and show_depth:
-            frames = pipeline.wait_for_frames()
-            depth_frame = frames.get_depth_frame()
-            #depth_frame = depth_frames_queue.pop(0) if len(depth_frames_queue) > 0 else None
+            # frames = pipeline.wait_for_frames()
+            # depth_frame = frames.get_depth_frame()
+            depth_frame = depth_frames_queue
             if not depth_frame:
                 continue
-
+            depth_frames_queue = None
             # Convert to numpy array
             frame = np.asanyarray(colorizer.colorize(depth_frame).get_data())
+            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
             yield from encode_and_yield(frame)
 
         # if camera off, return empty frame
@@ -367,22 +370,23 @@ def status_to_on_off(property_on):
 
 @app.post("/toggle_depth", tags=["camera-controls"])
 def toggle_depth():
-    global show_depth, dev, depth_frames_queue, config, pipeline, pipeline_profile
+    global show_depth, dev, depth_frames_queue, config#, pipeline, pipeline_profile
     show_depth = not show_depth
     depth_sensor = dev.first_depth_sensor()
     if show_depth:
-        depth_profiles = (p for p in depth_sensor.profiles if p.stream_type() == rs.stream.depth and p.fps() == 30)
+        depth_profiles = (p for p in depth_sensor.profiles if p.stream_type() == rs.stream.depth and p.fps() == 30
+                          and p.as_video_stream_profile().width() == 848 and p.as_video_stream_profile().height() == 480)
         depth_profile = next(depth_profiles)
         print("chosen profile:", depth_profile)
         #pipeline.stop()
         config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
-        #depth_sensor.open(depth_profile)
-        #depth_sensor.start(cb)
+        depth_sensor.open(depth_profile)
+        depth_sensor.start(depth_cb)
     else:
         #pipeline.stop()
         config.disable_stream(rs.stream.depth)
-        #depth_sensor.stop()
-        #depth_sensor.close()
+        depth_sensor.stop()
+        depth_sensor.close()
     #pipeline_profile = pipeline.start(config)
     #dev = pipeline_profile.get_device()
 
@@ -390,24 +394,25 @@ def toggle_depth():
 
 @app.post("/toggle_color", tags=["camera-controls"])
 def toggle_color():
-    global show_color, dev, color_frames_queue, config, pipeline, pipeline_profile
+    global show_color, dev, color_frames_queue, config#, pipeline, pipeline_profile
     show_color = not show_color
     color_sensor = dev.first_color_sensor()
     if show_color:
         color_profiles = (p for p in color_sensor.profiles if p.stream_type() == rs.stream.color
+                          and p.as_video_stream_profile().width() == 640 and p.as_video_stream_profile().height() == 480
                           and p.fps() == 30 and p.format() == rs.format.bgr8)
 
         color_profile = next(color_profiles)
         print("chosen profile:", color_profile)
         #pipeline.stop()
         #config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
-        #color_sensor.open(color_profile)
-        #color_sensor.start(cb)
+        color_sensor.open(color_profile)
+        color_sensor.start(color_cb)
     else:
         #pipeline.stop()
         #config.disable_stream(rs.stream.color)
-        #color_sensor.stop()
-        #color_sensor.close()
+        color_sensor.stop()
+        color_sensor.close()
 
     #pipeline_profile = pipeline.start(config)
     #dev = pipeline_profile.get_device()
