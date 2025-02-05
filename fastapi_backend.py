@@ -239,8 +239,8 @@ print(rs.format.combined_motion)
 print(dir(rs.format))
 print(rs.stream.motion)
 print(dir(rs.stream))
-#config.enable_stream(rs.stream.accel)
-config.enable_stream(rs.stream.gyro)
+config.enable_stream(rs.stream.accel)
+#config.enable_stream(rs.stream.gyro)
 pipeline.start(config)
 colorizer = rs.colorizer()
 #dev = pipeline.get_active_profile().get_device()
@@ -249,6 +249,9 @@ sensors = dev.query_sensors()
 flags = {} #{ f"{s.name}" : True for s in sensors}
 html_inputs = ""
 html_inputs_scripts = ""
+html_toggle_buttons = ""
+html_img_stream = ""
+html_update_stream_script = ""
 
 html_inputs += '<div style="display: flex; flex-wrap: wrap; justify-content: space-between;">'
 for s in sensors:
@@ -310,6 +313,7 @@ for s in sensors:
     html_inputs += '</div>'  # End of sensor options container
 
     def create_streams_endpoints(sensor=s, sensor_name=base_path):
+        global html_toggle_buttons, html_img_stream, html_update_stream_script
         def sensor_feed():
             def generate_frames():
                 global camera_on, flags
@@ -357,6 +361,12 @@ for s in sensors:
 
         app.add_api_route(f"/{sensor_name}_stream", sensor_feed, methods=["GET"], tags=["camera-controls"])
         app.add_api_route(f"/toggle_{sensor_name}", toggle_sensor, methods=["POST"], tags=["camera-controls"])
+
+        html_img_stream += f'<img src="/{sensor_name}_stream" width="640" height="480" id="{sensor_name}-stream">\n'
+        html_toggle_buttons += f'<button type="submit" data-action="toggle_{sensor_name}">Toggle {sensor.name} Stream</button>\n'
+        html_update_stream_script += f"document.getElementById('{sensor_name}-stream').src = '/{sensor_name}_stream?' + timestamp;\n"
+
+        print(f"created routes /toggle_{sensor_name} and /{sensor_name}_stream")
 
     create_streams_endpoints()
 
@@ -471,29 +481,36 @@ def index():
     <html>
     <body>
     <h1>RealSense Stream</h1>
-    <img src="/color_stream" width="640" height="480" id="color-stream">
-    <img src="/depth_stream" width="640" height="480" id="depth-stream">
+    <div style="display: flex; justify-content: center; align-items: center;">
+        {html_img_stream}
+    </div>
     <form id="toggle-camera-form">
-        <button type="submit" name="toggle_camera">Toggle Camera</button>
-        <button type="submit" name="toggle_color">Toggle Color Stream</button>
-        <button type="submit" name="toggle_depth">Toggle Depth Stream</button>
+        <button type="submit" data-action="toggle_camera">Toggle Camera</button>
+        {html_toggle_buttons}
     </form>
     {html_inputs}
     <script>
-    document.getElementById('toggle-camera-form').addEventListener('submit', function(event) {{
+        document.getElementById('toggle-camera-form').addEventListener('submit', async function(event) {{
         event.preventDefault();
         const formData = new FormData(event.target);
-        const action = event.submitter.name;
+        const action = event.submitter.getAttribute('data-action');
         const url = '/' + action;
-        fetch(url, {{
-            method: 'POST',
-            body: formData
-        }}).then(() => {{
-            // timestamp is used to reload image from server
-            document.getElementById('color-stream').src = '/color_stream?' + new Date().getTime(); 
-            document.getElementById('depth-stream').src = '/depth_stream?' + new Date().getTime(); 
-        }});
+
+        try {{
+            await fetch(url, {{
+                method: 'POST',
+                body: formData
+            }});
+            updateStreams();
+        }} catch (error) {{
+            console.error('Error toggling stream:', error);
+        }}
     }});
+
+    function updateStreams() {{
+        const timestamp = new Date().getTime();
+        {html_update_stream_script}
+    }}
     {html_inputs_scripts}
     </script>
     </body>
