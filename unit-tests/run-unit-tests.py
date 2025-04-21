@@ -494,182 +494,187 @@ def test_wrapper( test, configuration=None, repetition=1, serial_numbers=None ):
 
     return False
 
-# Run all tests
-try:
-    list_only = list_tags or list_tests
-    if only_not_live:
-        log.d( 'Only --not-live tests running; skipping device discovery' )
-    elif not list_only:
-        log.progress( '-I- Discovering devices ...' )
-        if pyrs:
-            sys.path.insert( 1, pyrs_path )  # Make sure we pick up the right pyrealsense2!
-        from rspy import devices
-        disable_dds = "dds" not in context
-        devices.query( hub_reset = hub_reset, disable_dds=disable_dds ) #resets the device
-        devices.map_unknown_ports()
-        #
-        # Under a development environment (i.e., without a hub), we may only have one device connected
-        # or even none and want to only show a warning for live tests:
-        skip_live_tests = len( devices.all() ) == 0 and not devices.hub
-        #
-        exceptions = None
-        if not skip_live_tests:
-            if not no_exceptions and os.path.isfile( libci.exceptionsfile ):
+def run_all_tests():
+    from rspy import devices
+    for hub in devices.hubs:
+        devices.hub = hub
+        # Run all tests
+        try:
+            list_only = list_tags or list_tests
+            if only_not_live:
+                log.d( 'Only --not-live tests running; skipping device discovery' )
+            elif not list_only:
+                log.progress( '-I- Discovering devices ...' )
+                if pyrs:
+                    sys.path.insert( 1, pyrs_path )  # Make sure we pick up the right pyrealsense2!
+                disable_dds = "dds" not in context
+                devices.query( hub_reset = hub_reset, disable_dds=disable_dds ) #resets the device
+                devices.map_unknown_ports()
+                #
+                # Under a development environment (i.e., without a hub), we may only have one device connected
+                # or even none and want to only show a warning for live tests:
+                skip_live_tests = len( devices.all() ) == 0 and not devices.hub
+                #
+                exceptions = None
+                if not skip_live_tests:
+                    if not no_exceptions and os.path.isfile( libci.exceptionsfile ):
+                        try:
+                            log.d( 'loading device exceptions from:', libci.exceptionsfile )
+                            log.debug_indent()
+                            exceptions = devices.load_specs_from_file( libci.exceptionsfile )
+                            exceptions = devices.expand_specs( exceptions )
+                            log.d( '==>', exceptions )
+                        finally:
+                            log.debug_unindent()
+                #
+                if device_set is not None:
+                    sns = set()  # convert the list of specs to a list of serial numbers
+                    ignored_list = list()
+                    for spec in device_set:
+                        included_devices = [sn for sn in devices.by_spec( spec, ignored_list )]
+                        if not included_devices:
+                            log.f( f'No match for --device "{spec}"' )
+                        sns.update( included_devices )
+                    device_set = sns
+                    log.d( f'ignoring devices other than: {serial_numbers_to_string( device_set )}' )
+                #
+                log.progress()
+            #
+            # Automatically detect github actions based on environment variable
+            #     see https://docs.github.com/en/actions/learn-github-actions/variables
+            # We must do this before calculating the tests otherwise the context cannot be used in
+            # directives...
+            if 'gha' not in context:
+                if os.environ.get( 'GITHUB_ACTIONS' ):
+                    context.append( 'gha' )
+            #
+            log.reset_errors()
+            available_tags = set()
+            tests = []
+            failed_tests = []
+            if context:
+                log.i( 'Running under context:', context )
+            if not to_stdout:
+                log.i( 'Logs in:', libci.logdir )
+            for test in prioritize_tests( get_tests() ):
                 try:
-                    log.d( 'loading device exceptions from:', libci.exceptionsfile )
+                    #
+                    if only_live and not test.is_live():
+                        log.d( f'{test.name} is not live; skipping' )
+                        continue
+                    if only_not_live and test.is_live():
+                        log.d( f'{test.name} is live; skipping' )
+                        continue
+                    #
+                    if test.config.donotrun:
+                        log.d( f'{test.name} is marked do-not-run; skipping' )
+                        continue
+                    #
+                    unfit_tags = []
+                    for tag in required_tags:
+                        if tag.startswith('!'):
+                            if tag[1:] in test.config.tags:
+                                unfit_tags.append( tag )
+                        elif tag not in test.config.tags:
+                            unfit_tags.append( tag )
+                    if unfit_tags:
+                        log.d( f'{test.name} has {test.config.tags} which do not fit --tag {unfit_tags}; skipping' )
+                        continue
+                    #
+                    if 'Windows' in test.config.flags and linux:
+                        log.d( f'{test.name} has Windows flag and OS is Linux; skipping' )
+                        continue
+                    if 'Linux' in test.config.flags and not linux:
+                        log.d( f'{test.name} has Linux flag and OS is Windows; skipping' )
+                        continue
+                    #
+                    if to_stdout and not list_only:
+                        log.split()
+                    log.d( 'found', test.name, '...' )
                     log.debug_indent()
-                    exceptions = devices.load_specs_from_file( libci.exceptionsfile )
-                    exceptions = devices.expand_specs( exceptions )
-                    log.d( '==>', exceptions )
+                    test.debug_dump()
+                    #
+                    available_tags.update( test.config.tags )
+                    tests.append( test )
+                    if list_only:
+                        n_tests += 1
+                        continue
+                    #
+                    if not test.is_live():
+                        test_ok = True
+                        for repetition in range(repeat):
+                            test_ok = test_wrapper( test, repetition = repetition ) and test_ok
+                        if not test_ok:
+                            failed_tests.append( test )
+                        continue
+                    #
+                    if skip_live_tests:
+                        if skip_disconnected:
+                            log.w( test.name + ':', 'is live & no cameras were found; skipping due to --skip-disconnected' )
+                        else:
+                            log.e( test.name + ':', 'is live and there are no cameras' )
+                        continue
+                    #
+                    test_ok = True
+                    for configuration, serial_numbers in devices_by_test_config( test, exceptions ):
+                        for repetition in range(repeat):
+                            try:
+                                log.d( 'configuration:', configuration_str( configuration, repetition, sns=serial_numbers ) )
+                                log.debug_indent()
+                                should_reset = not no_reset
+                                devices.enable_only( serial_numbers, recycle=should_reset )
+                            except RuntimeError as e:
+                                log.w( log.red + test.name + log.reset + ': ' + str( e ) )
+                            else:
+                                test_ok = test_wrapper( test, configuration, repetition, serial_numbers ) and test_ok
+                            finally:
+                                log.debug_unindent()
+                    if not test_ok:
+                        failed_tests.append( test )
+                    #
                 finally:
                     log.debug_unindent()
-        #
-        if device_set is not None:
-            sns = set()  # convert the list of specs to a list of serial numbers
-            ignored_list = list()
-            for spec in device_set:
-                included_devices = [sn for sn in devices.by_spec( spec, ignored_list )]
-                if not included_devices:
-                    log.f( f'No match for --device "{spec}"' )
-                sns.update( included_devices )
-            device_set = sns
-            log.d( f'ignoring devices other than: {serial_numbers_to_string( device_set )}' )
-        #
-        log.progress()
-    #
-    # Automatically detect github actions based on environment variable
-    #     see https://docs.github.com/en/actions/learn-github-actions/variables
-    # We must do this before calculating the tests otherwise the context cannot be used in
-    # directives...
-    if 'gha' not in context:
-        if os.environ.get( 'GITHUB_ACTIONS' ):
-            context.append( 'gha' )
-    #
-    log.reset_errors()
-    available_tags = set()
-    tests = []
-    failed_tests = []
-    if context:
-        log.i( 'Running under context:', context )
-    if not to_stdout:
-        log.i( 'Logs in:', libci.logdir )
-    for test in prioritize_tests( get_tests() ):
-        try:
-            #
-            if only_live and not test.is_live():
-                log.d( f'{test.name} is not live; skipping' )
-                continue
-            if only_not_live and test.is_live():
-                log.d( f'{test.name} is live; skipping' )
-                continue
-            #
-            if test.config.donotrun:
-                log.d( f'{test.name} is marked do-not-run; skipping' )
-                continue
-            #
-            unfit_tags = []
-            for tag in required_tags:
-                if tag.startswith('!'):
-                    if tag[1:] in test.config.tags:
-                        unfit_tags.append( tag )
-                elif tag not in test.config.tags:
-                    unfit_tags.append( tag )
-            if unfit_tags:
-                log.d( f'{test.name} has {test.config.tags} which do not fit --tag {unfit_tags}; skipping' )
-                continue
-            #
-            if 'Windows' in test.config.flags and linux:
-                log.d( f'{test.name} has Windows flag and OS is Linux; skipping' )
-                continue
-            if 'Linux' in test.config.flags and not linux:
-                log.d( f'{test.name} has Linux flag and OS is Windows; skipping' )
-                continue
-            #
+
             if to_stdout and not list_only:
                 log.split()
-            log.d( 'found', test.name, '...' )
-            log.debug_indent()
-            test.debug_dump()
+            log.progress()
             #
-            available_tags.update( test.config.tags )
-            tests.append( test )
+            if not n_tests:
+                log.f( 'No unit-tests found!' )
+            #
             if list_only:
-                n_tests += 1
-                continue
+                if list_tags and list_tests:
+                    for t in sorted( tests, key= lambda x: x.name ):
+                        print( t.name, "has tags:", ' '.join( t.config.tags ) )
+                #
+                elif list_tags:
+                    for t in sorted( list( available_tags ) ):
+                        print( t )
+                #
+                elif list_tests:
+                    for t in sorted( tests, key= lambda x: x.name ):
+                        print( t.name )
             #
-            if not test.is_live():
-                test_ok = True
-                for repetition in range(repeat):
-                    test_ok = test_wrapper( test, repetition = repetition ) and test_ok
-                if not test_ok:
-                    failed_tests.append( test )
-                continue
-            #
-            if skip_live_tests:
-                if skip_disconnected:
-                    log.w( test.name + ':', 'is live & no cameras were found; skipping due to --skip-disconnected' )
-                else:
-                    log.e( test.name + ':', 'is live and there are no cameras' )
-                continue
-            #
-            test_ok = True
-            for configuration, serial_numbers in devices_by_test_config( test, exceptions ):
-                for repetition in range(repeat):
-                    try:
-                        log.d( 'configuration:', configuration_str( configuration, repetition, sns=serial_numbers ) )
-                        log.debug_indent()
-                        should_reset = not no_reset
-                        devices.enable_only( serial_numbers, recycle=should_reset )
-                    except RuntimeError as e:
-                        log.w( log.red + test.name + log.reset + ': ' + str( e ) )
-                    else:
-                        test_ok = test_wrapper( test, configuration, repetition, serial_numbers ) and test_ok
-                    finally:
-                        log.debug_unindent()
-            if not test_ok:
-                failed_tests.append( test )
-            #
+            else:
+                n_errors = log.n_errors()
+                if n_errors:
+                    log.out( log.red + str( n_errors ) + log.reset, 'of', n_tests, 'test(s)',
+                             log.red + 'failed!' + log.reset + log.clear_eos )
+                    log.d( 'Failed tests:\n    ' + '\n    '.join( [test.name for test in failed_tests] ))
+                    sys.exit( 1 )
+                #
+                log.out( str( n_tests ) + ' unit-test(s) completed successfully' + log.clear_eos )
+        #
         finally:
-            log.debug_unindent()
+            #
+            # Disconnect from the hub -- if we don't it might crash on Linux...
+            # Before that we close all ports, no need for cameras to stay on between LibCI runs
+            if not list_only and not only_not_live:
+                if devices.hub and devices.hub.is_connected():
+                    devices.hub.disable_ports()
+                    devices.wait_until_all_ports_disabled()
+                    devices.hub.disconnect()
+#
 
-    if to_stdout and not list_only:
-        log.split()
-    log.progress()
-    #
-    if not n_tests:
-        log.f( 'No unit-tests found!' )
-    #
-    if list_only:
-        if list_tags and list_tests:
-            for t in sorted( tests, key= lambda x: x.name ):
-                print( t.name, "has tags:", ' '.join( t.config.tags ) )
-        #
-        elif list_tags:
-            for t in sorted( list( available_tags ) ):
-                print( t )
-        #
-        elif list_tests:
-            for t in sorted( tests, key= lambda x: x.name ):
-                print( t.name )
-    #
-    else:
-        n_errors = log.n_errors()
-        if n_errors:
-            log.out( log.red + str( n_errors ) + log.reset, 'of', n_tests, 'test(s)',
-                     log.red + 'failed!' + log.reset + log.clear_eos )
-            log.d( 'Failed tests:\n    ' + '\n    '.join( [test.name for test in failed_tests] ))
-            sys.exit( 1 )
-        #
-        log.out( str( n_tests ) + ' unit-test(s) completed successfully' + log.clear_eos )
-#
-finally:
-    #
-    # Disconnect from the hub -- if we don't it might crash on Linux...
-    # Before that we close all ports, no need for cameras to stay on between LibCI runs
-    if not list_only and not only_not_live:
-        if devices.hub and devices.hub.is_connected():
-            devices.hub.disable_ports()
-            devices.wait_until_all_ports_disabled()
-            devices.hub.disconnect()
-#
+run_all_tests()
 sys.exit( 0 )

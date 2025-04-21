@@ -43,7 +43,8 @@ from rspy import device_hub
 try:
     import pyrealsense2 as rs
     log.d( rs )
-    hub = device_hub.create() # if there's no hub, this will hold None
+    hubs = device_hub.create() # if there are hubs, this will hold [ None ]
+    hub = None
     sys.path = sys.path[:-1]  # remove what we added
 except ModuleNotFoundError:
     log.w( 'No pyrealsense2 library is available! Running as if no cameras available...' )
@@ -558,13 +559,6 @@ def enable_only( serial_numbers, recycle = False, timeout = MAX_ENUMERATION_TIME
         log.d( 'no hub; ports left as-is' )
         # even without reset, enable_only should wait for the devices to be available again
         _wait_for(serial_numbers, timeout=timeout)
-
-
-def enable_all():
-    """
-    Enables all ports on the hub -- without a hub, this does nothing!
-    """
-    hub.enable_ports()
 
 
 def _wait_until_removed( serial_numbers, timeout = 5 ):

@@ -141,19 +141,24 @@ def _find_active_hub():
     """
     Function finds an available hub to connect to and returns it
     """
+    active_hubs = []
     acroname_hub = _create_acroname()
     if acroname_hub:
-        return acroname_hub
+        # return acroname_hub
+        active_hubs.append(acroname_hub)
 
     ykush_hub = _create_ykush()
     if ykush_hub:
-        return ykush_hub
+        # return ykush_hub
+        active_hubs.append(ykush_hub)
+
     unifi_hub = _create_unifi()
     if unifi_hub:
-        return unifi_hub
+        # return unifi_hub
+        active_hubs.append(unifi_hub)
     import sys
     log.d('sys.path=', sys.path)
-    return None
+    return active_hubs or [ None ]
 
 
 def _create_acroname():
