@@ -38,6 +38,7 @@ except ModuleNotFoundError:
 
 
 if "UNIFI_SSH_PASSWORD" not in os.environ:
+    print(os.environ)
     log.d("no unifi credentials set")
     raise EnvironmentError("Environment variable UNIFI_SSH_PASSWORD not set")
 SWITCH_IP = "192.168.11.20"
