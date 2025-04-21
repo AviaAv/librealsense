@@ -9,7 +9,7 @@ import sys, os, subprocess, re, platform, getopt, time
 current_dir = os.path.dirname( os.path.abspath( __file__ ) )
 sys.path.append( os.path.join( current_dir, 'py' ))
 
-from rspy import log, file, repo, libci
+from rspy import log, file, repo, libci, devices
 
 # Python's default list of paths to look for modules includes user-intalled. We want
 # to avoid those to take only the pyrealsense2 we actually compiled!
@@ -495,7 +495,7 @@ def test_wrapper( test, configuration=None, repetition=1, serial_numbers=None ):
     return False
 
 def run_all_tests():
-    from rspy import devices
+    global device_set, list_only, n_tests
     for hub in devices.hubs:
         devices.hub = hub
         # Run all tests
