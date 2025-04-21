@@ -51,6 +51,7 @@ except ModuleNotFoundError:
     import sys
     log.d( 'sys.path=', sys.path )
     rs = None
+    hubs = []
     hub = None
 
 import time
