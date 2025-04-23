@@ -243,9 +243,9 @@ def query( monitor_changes=True, hub_reset=False, recycle_ports=True, disable_dd
     #
     # Get all devices, and store by serial-number
     global _device_by_sn, _context, _port_to_sn
-    settings = {}
+    settings = {'dds' : { 'enabled' : True }}
     if disable_dds:
-        settings['dds'] = { 'enabled': False }
+        settings['dds']['enabled'] = False
     _context = rs.context( settings )
     _device_by_sn = dict()
     try:
