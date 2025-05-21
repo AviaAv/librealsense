@@ -36,6 +36,7 @@ if __name__ == '__main__':
 
 
 try:
+    signals.block_brainstem_signals()
     import brainstem
 except ModuleNotFoundError:
     log.d( 'no acroname library is available' )
@@ -212,7 +213,6 @@ class Acroname(device_hub.device_hub):
                         changed = True
         #
         if changed and sleep_on_change:
-            signals.register_signal_handlers()
             import time
             time.sleep( sleep_on_change )
         #
@@ -238,7 +238,6 @@ class Acroname(device_hub.device_hub):
                         else:
                             changed = True
         if changed and sleep_on_change:
-            signals.register_signal_handlers()
             import time
             time.sleep( sleep_on_change )
         #
