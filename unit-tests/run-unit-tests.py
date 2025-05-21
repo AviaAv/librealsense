@@ -637,6 +637,7 @@ try:
                     except RuntimeError as e:
                         log.w( log.red + test.name + log.reset + ': ' + str( e ) )
                     else:
+                        register_signal_handlers()
                         test_ok = test_wrapper( test, configuration, repetition, serial_numbers ) and test_ok
                     finally:
                         log.debug_unindent()
