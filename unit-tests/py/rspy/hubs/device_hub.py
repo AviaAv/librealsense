@@ -137,7 +137,7 @@ def find_all_hubs(vid):
     # 24ff:8013 =
     #   iManufacturer           Acroname Inc.
     #   iProduct                USBHub3p-3[A]
-    from rspy import lsusb
+    from rspy.utils import lsusb
     hubs = set( lsusb.devices_by_vendor( vid ))
     ports = set()
     # go thru the tree and find only the top-level ones (which we should encounter first)
@@ -187,7 +187,7 @@ def _find_active_hub():
 
 def _create_acroname():
     try:
-        from rspy import acroname
+        from . import acroname
         return acroname.Acroname()
     except ModuleNotFoundError:
         return None
@@ -199,7 +199,7 @@ def _create_acroname():
 
 def _create_ykush():
     try:
-        from rspy import ykush
+        from . import ykush
         return ykush.Ykush()
     except ModuleNotFoundError:
         return None
@@ -210,7 +210,7 @@ def _create_ykush():
 
 def _create_unifi():
     try:
-        from rspy import unifi
+        from . import unifi
         return unifi.UniFiSwitch()
     except ModuleNotFoundError:
         return None
@@ -227,6 +227,6 @@ def _create_combined_hubs(hub_list):
     :param hub_list: list of hubs
     :return: combined hub
     """
-    from rspy import combined_hub
+    from . import combined_hub
     return combined_hub.CombinedHub(hub_list)
 

@@ -1,7 +1,8 @@
 # License: Apache 2.0. See LICENSE file in root directory.
 # Copyright(c) 2025 Intel Corporation. All Rights Reserved.
 
-from rspy import device_hub, log
+from . import device_hub
+from rspy import log
 
 
 class CombinedHub(device_hub.device_hub):

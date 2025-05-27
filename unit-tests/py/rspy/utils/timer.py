@@ -1,7 +1,7 @@
 # License: Apache 2.0. See LICENSE file in root directory.
 # Copyright(c) 2020 Intel Corporation. All Rights Reserved.
 import time
-from rspy.stopwatch import Stopwatch
+from .stopwatch import Stopwatch
 
 # A timer counting backwards in time(vs forwards in the `stopwatch` class )
 # It supply basic timer API, start, has_expired..

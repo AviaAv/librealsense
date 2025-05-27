@@ -8,7 +8,8 @@ See documentation for brainstem here:
 https://acroname.com/reference/api/python/index.html
 """
 
-from rspy import log, device_hub, signals
+from . import device_hub
+from rspy import log, signals
 import time
 import platform, re
 

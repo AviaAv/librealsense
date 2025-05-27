@@ -3,7 +3,7 @@
 
 import os, re, platform, subprocess, sys
 
-from rspy import log
+from . import log
 
 # get os and directories for future use
 # NOTE: WSL will read as 'Linux' but the build is Windows-based!
