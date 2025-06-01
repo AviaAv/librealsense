@@ -175,6 +175,7 @@ def _find_active_hub():
     if unifi_hub:
         active_hubs.append(unifi_hub)
 
+    log.d("found hubs are:", active_hubs)
     if len(active_hubs) > 1:
         return _create_combined_hubs(active_hubs)
     if len(active_hubs) == 1:
@@ -189,11 +190,14 @@ def _create_acroname():
     try:
         from rspy import acroname
         return acroname.Acroname()
-    except ModuleNotFoundError:
+    except ModuleNotFoundError as e:
+        log.d("ModuleNotFoundError:", e)
         return None
-    except acroname.NoneFoundError:
+    except acroname.NoneFoundError as e:
+        log.d("NoneFoundError:", e)
         return None
-    except BaseException:
+    except BaseException as e:
+        log.d("BaseException:", e)
         return None
 
 
@@ -212,13 +216,17 @@ def _create_unifi():
     try:
         from rspy import unifi
         return unifi.UniFiSwitch()
-    except ModuleNotFoundError:
+    except ModuleNotFoundError as e:
+        log.d("ModuleNotFoundError:", e)
         return None
-    except EnvironmentError:
+    except EnvironmentError as e:
+        log.d("EnvironmentError:", e)
         return None
-    except unifi.NoneFoundError:
+    except unifi.NoneFoundError as e:
+        log.d("NoneFoundError:", e)
         return None
     except BaseException as e:
+        log.d("BaseException:", e)
         return None
 
 def _create_combined_hubs(hub_list):
