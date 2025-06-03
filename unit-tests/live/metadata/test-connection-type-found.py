@@ -25,5 +25,23 @@ if test.check(dev.supports(rs.camera_info.connection_type)):
         else:
             test.check(connection_type == "USB")
 
+    import os
+    # Create the file with "0" if it doesn't exist
+    if not os.path.exists("foo.txt"):
+        with open("foo.txt", "w") as f:
+            f.write("0")
+
+    with open("foo.txt", "r+") as file:
+        content = file.read().strip()
+        file.seek(0)
+
+        if content == "0":
+            test.fail()
+            file.write("1")
+        else:
+            test.check(True, "succeeded on second run")
+            file.write("0")
+
+        file.truncate()
 test.finish()
 test.print_results_and_exit()
