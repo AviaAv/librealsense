@@ -4,7 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pyrealsense2"
-dynamic = ["version"]
+# version is set at runtime, this is just a placeholder
+version = "1.0.0"
 description = "Python Wrapper for Intel Realsense SDK 2.0."
 readme = {file = "README.rst", content-type = "text/x-rst", charset = "utf-8"}
 authors = [
@@ -36,9 +37,6 @@ classifiers = [
     "Topic :: Software Development",
     "Topic :: Software Development :: Libraries :: Application Frameworks"
 ]
-
-[tool.hatch.version]
-path = "pyrealsense2/_version.py"
 
 [project.urls]
 homepage = "https://github.com/IntelRealSense/librealsense"
