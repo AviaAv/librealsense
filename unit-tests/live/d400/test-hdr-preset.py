@@ -82,6 +82,11 @@ test_json_load(MANUAL_HDR_CONFIG, "Manual mode: Loading HDR preset config")
 
 # expected that i == sequence id
 with test.closure("Manual mode: Checking streaming data matches config"):
+    expected_iterations = {}
+    for idx, item in enumerate(MANUAL_HDR_CONFIG["hdr-preset"]["items"]):
+        expected_iterations[idx] = int(item["iterations"])
+
+    seq_id_counts = {}
     pipe.start(cfg)
 
     log.d(f"Batch size: {batch_size}")
@@ -100,6 +105,7 @@ with test.closure("Manual mode: Checking streaming data matches config"):
 
         log.d(f"Frame {frame_number} - Sequence ID: {seq_id}, Exposure: {frame_exposure}, Gain: {frame_gain}")
 
+        seq_id_counts[seq_id] = seq_id_counts.get(seq_id, 0) + 1
         current_controls = MANUAL_HDR_CONFIG["hdr-preset"]["items"][seq_id]["controls"]
         expected_exposure = int(current_controls["depth-exposure"])
         expected_gain = int(current_controls["depth-gain"])
@@ -109,6 +115,10 @@ with test.closure("Manual mode: Checking streaming data matches config"):
         test.check(seq_size == len(MANUAL_HDR_CONFIG["hdr-preset"]["items"]))
 
         if i % batch_size == batch_size - 1:
+            test.check(seq_id_counts == expected_iterations,
+                       f"Sequence ID counts do not match expected: {seq_id_counts} != {expected_iterations}")
+            seq_id_counts.clear()
+
             log.d("----")
 
     pipe.stop()
