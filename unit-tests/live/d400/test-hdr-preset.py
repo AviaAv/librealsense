@@ -139,8 +139,8 @@ with test.closure("Auto mode: Checking streaming data matches config"):
         if i < batch_size:
             continue
         elif seq_id_0_exp == 0 and seq_id_0_gain == 0 and seq_id != 0:
-            # skip until we see seq_id 0, we decrease i to show it in batches that start with seq_id 0
-            i -= 1
+            # skip until we see seq_id 0, we set i to start from the next batch
+            i = batch_size - 1
             continue
 
         log.d(f"Frame {frame_number} - Sequence ID: {seq_id}, Exposure: {frame_exposure}, Gain: {frame_gain}")
