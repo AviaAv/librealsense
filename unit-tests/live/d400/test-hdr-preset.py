@@ -36,11 +36,11 @@ AUTO_HDR_CONFIG = {
         "id": "0",
         "iterations": "0",
         "items": [
-            {"controls": {"depth-ae": "1"}, "iterations": "1"},
-            {"controls": {"depth-ae-exp": "2000", "depth-ae-gain": "30"}, "iterations": "1"},
-            {"controls": {"depth-ae-exp": "-2000", "depth-ae-gain": "20"}, "iterations": "1"},
-            {"controls": {"depth-ae-exp": "3000", "depth-ae-gain": "10"}, "iterations": "1"},
-            {"controls": {"depth-ae-exp": "-3000", "depth-ae-gain": "40"}, "iterations": "1"},
+            {"iterations": "1", "controls": {"depth-ae": "1"}},
+            {"iterations": "2", "controls": {"depth-ae-exp": "2000", "depth-ae-gain": "30"}},
+            {"iterations": "2", "controls": {"depth-ae-exp": "-2000", "depth-ae-gain": "20"}},
+            {"iterations": "3", "controls": {"depth-ae-exp": "3000", "depth-ae-gain": "10"}},
+            {"iterations": "3", "controls": {"depth-ae-exp": "-3000", "depth-ae-gain": "40"}},
         ]
     }
 }
@@ -103,9 +103,9 @@ with test.closure("Manual mode: Checking streaming data matches config"):
         frame_gain     = depth_frame.get_frame_metadata(rs.frame_metadata_value.gain_level)
         seq_size       = depth_frame.get_frame_metadata(rs.frame_metadata_value.sequence_size)
 
+        seq_id_counts[seq_id] = seq_id_counts.get(seq_id, 0) + 1
         log.d(f"Frame {frame_number} - Sequence ID: {seq_id}, Exposure: {frame_exposure}, Gain: {frame_gain}")
 
-        seq_id_counts[seq_id] = seq_id_counts.get(seq_id, 0) + 1
         current_controls = MANUAL_HDR_CONFIG["hdr-preset"]["items"][seq_id]["controls"]
         expected_exposure = int(current_controls["depth-exposure"])
         expected_gain = int(current_controls["depth-gain"])
@@ -134,6 +134,12 @@ with test.closure("Auto mode: Checking streaming data matches config"):
     if sensor.supports(rs.option.auto_exposure_mode):
         test.check(sensor.get_option(rs.option.auto_exposure_mode) == 1)
 
+    expected_iterations = {}
+    for idx, item in enumerate(AUTO_HDR_CONFIG["hdr-preset"]["items"]):
+        expected_iterations[idx] = int(item["iterations"])
+
+    seq_id_counts = {}
+
     pipe.start(cfg)
     log.d(f"Batch size: {batch_size}")
     i = 0
@@ -154,6 +160,7 @@ with test.closure("Auto mode: Checking streaming data matches config"):
             # skip until we see seq_id 0
             continue
 
+        seq_id_counts[seq_id] = seq_id_counts.get(seq_id, 0) + 1
         log.d(f"Frame {frame_number} - Sequence ID: {seq_id}, Exposure: {frame_exposure}, Gain: {frame_gain}")
         if seq_id == 0:
             seq_id_0_exp = frame_exposure
@@ -170,6 +177,10 @@ with test.closure("Auto mode: Checking streaming data matches config"):
         test.check(seq_size == len(AUTO_HDR_CONFIG["hdr-preset"]["items"]))
 
         if i % batch_size == batch_size - 1:
+            test.check(seq_id_counts == expected_iterations,
+                       f"Sequence ID counts do not match expected: {seq_id_counts} != {expected_iterations}")
+            seq_id_counts.clear()
+
             log.d("----")
         i += 1
 
