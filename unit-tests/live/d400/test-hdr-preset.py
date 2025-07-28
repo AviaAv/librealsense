@@ -126,7 +126,8 @@ with test.closure("Auto mode: Checking streaming data matches config"):
 
     pipe.start(cfg)
     log.d(f"Batch size: {batch_size}")
-    for i in range(0, batch_size * 5):
+    i = 0
+    while i < batch_size * 5:
         data = pipe.wait_for_frames()
         depth_frame = data.get_depth_frame()
         frame_number = depth_frame.get_frame_number()
@@ -137,16 +138,17 @@ with test.closure("Auto mode: Checking streaming data matches config"):
         seq_size       = depth_frame.get_frame_metadata(rs.frame_metadata_value.sequence_size)
 
         if i < batch_size:
+            i += 1
             continue
         elif seq_id_0_exp == 0 and seq_id_0_gain == 0 and seq_id != 0:
-            # skip until we see seq_id 0, we set i to start from the next batch
-            i = batch_size - 1
+            # skip until we see seq_id 0
             continue
 
         log.d(f"Frame {frame_number} - Sequence ID: {seq_id}, Exposure: {frame_exposure}, Gain: {frame_gain}")
         if seq_id == 0:
             seq_id_0_exp = frame_exposure
             seq_id_0_gain = frame_gain
+            i += 1
             continue
 
         current_controls = AUTO_HDR_CONFIG["hdr-preset"]["items"][seq_id]["controls"]
@@ -159,6 +161,7 @@ with test.closure("Auto mode: Checking streaming data matches config"):
 
         if i % batch_size == batch_size - 1:
             log.d("----")
+        i += 1
 
     pipe.stop()
 
