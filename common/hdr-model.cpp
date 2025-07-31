@@ -295,7 +295,7 @@ void hdr_model::render_control_item( hdr_preset::control_item & control)
     ImGui::PushID( &control );
 
     auto text_gain = _is_auto ? "Gain Delta" : "Gain Value:";
-    ImGui::Text( text_gain );
+    ImGui::Text("%s", text_gain);
     ImGui::SameLine();
     ImGui::SetNextItemWidth( 140 );
     int g = _is_auto ? control.delta_gain : control.depth_gain;
@@ -306,7 +306,7 @@ void hdr_model::render_control_item( hdr_preset::control_item & control)
             control.depth_gain = (int)clamp((float)g, _gain_range.min, _gain_range.max);
 
     auto text_exp = _is_auto ? "Exposure Delta" : "Exposure Value:";
-    ImGui::Text( text_exp );
+    ImGui::Text("%s", text_exp);
     ImGui::SameLine();
     ImGui::SetNextItemWidth( 140 );
     int e = _is_auto ? control.delta_exp : control.depth_exp;
