@@ -59,7 +59,7 @@ function(get_fastdds)
     list(POP_BACK CMAKE_MESSAGE_INDENT) # Unindent outputs
 
     add_library(dds INTERFACE)
-    target_link_libraries( dds INTERFACE fastcdr fastrtps )
+    target_link_libraries( dds INTERFACE fastdds)
     
     disable_third_party_warnings(fastcdr)  
     disable_third_party_warnings(fastrtps)  
