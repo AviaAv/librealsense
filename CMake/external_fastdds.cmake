@@ -65,7 +65,9 @@ function(get_fastdds)
     disable_third_party_warnings(fastrtps)  
 
     add_definitions(-DBUILD_WITH_DDS)
-
+    include(CMakeFindDependencyMacro)
+    find_dependency(fastcdr)
+    find_dependency(fastrtps)
     install(TARGETS dds EXPORT realsense2Targets)
     message(CHECK_PASS "Done")
 endfunction()
