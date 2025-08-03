@@ -57,24 +57,9 @@ function(get_fastdds)
                           FOLDER "3rd Party/fastdds")
 
     list(POP_BACK CMAKE_MESSAGE_INDENT) # Unindent outputs
-    
-    # Create a dummy source file
-    file(WRITE ${CMAKE_BINARY_DIR}/dds_dummy.cpp 
-         "// This file combines fastcdr and fastrtps into a single dds library\n")
 
-    add_library(dds STATIC ${CMAKE_BINARY_DIR}/dds_dummy.cpp)
-
-    # Use generator expressions to avoid exporting the target dependencies
-    target_link_libraries(dds PRIVATE 
-        $<BUILD_INTERFACE:fastcdr>
-        $<BUILD_INTERFACE:fastrtps>
-    )
-
-    # Ensure we get the include directories
-    target_include_directories(dds PUBLIC
-        $<BUILD_INTERFACE:$<TARGET_PROPERTY:fastcdr,INTERFACE_INCLUDE_DIRECTORIES>>
-        $<BUILD_INTERFACE:$<TARGET_PROPERTY:fastrtps,INTERFACE_INCLUDE_DIRECTORIES>>
-    )
+    add_library(dds INTERFACE)
+    target_link_libraries( dds INTERFACE fastcdr fastrtps )
     
     disable_third_party_warnings(fastcdr)  
     disable_third_party_warnings(fastrtps)  
