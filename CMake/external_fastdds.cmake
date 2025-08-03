@@ -65,8 +65,12 @@ function(get_fastdds)
     disable_third_party_warnings(fastrtps)  
 
     add_definitions(-DBUILD_WITH_DDS)
-
-    install(TARGETS dds EXPORT realsense2Targets)
+    
+    
+    install(TARGETS dds 
+    EXPORT realsense2Targets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}      # copies .a
+    )
     message(CHECK_PASS "Done")
 endfunction()
 
