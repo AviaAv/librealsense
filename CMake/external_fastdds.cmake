@@ -58,15 +58,15 @@ function(get_fastdds)
 
     list(POP_BACK CMAKE_MESSAGE_INDENT) # Unindent outputs
 
-    #add_library(dds INTERFACE)
-    #target_link_libraries( dds INTERFACE fastcdr fastrtps )
+    add_library(dds INTERFACE)
+    target_link_libraries( dds INTERFACE fastcdr fastrtps )
     
     disable_third_party_warnings(fastcdr)  
     disable_third_party_warnings(fastrtps)  
 
     add_definitions(-DBUILD_WITH_DDS)
 
-    #install(TARGETS dds EXPORT realsense2Targets)
+    install(TARGETS dds EXPORT realsense2Targets)
     message(CHECK_PASS "Done")
 endfunction()
 
