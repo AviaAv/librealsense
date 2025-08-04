@@ -65,7 +65,11 @@ function(get_fastdds)
     disable_third_party_warnings(fastrtps)  
 
     add_definitions(-DBUILD_WITH_DDS)
-    
+    install(
+  TARGETS fastcdr fastrtps
+  ARCHIVE
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}      # e.g. usr/lib/x86_64-linux-gnu
+)
     
     install(TARGETS dds 
     EXPORT realsense2Targets
