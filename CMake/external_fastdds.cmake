@@ -66,8 +66,7 @@ function(get_fastdds)
 
     add_definitions(-DBUILD_WITH_DDS)
     install(
-  TARGETS fastcdr fastrtps 
-    EXPORT realsense2Targets
+  TARGETS fastcdr fastrtps
   ARCHIVE
     DESTINATION ${CMAKE_INSTALL_LIBDIR}      # e.g. usr/lib/x86_64-linux-gnu
 )
