@@ -47,7 +47,16 @@ function(get_fastdds)
 
     # Get fastdds
     FetchContent_MakeAvailable(fastdds)
-    
+    # point these at wherever your .a files actually live:
+set_target_properties(fastcdr PROPERTIES
+  IMPORTED_LOCATION
+    "${CMAKE_BINARY_DIR}/third-party/fastdds/fastcdr/libfastcdr.a"
+)
+
+set_target_properties(fastrtps PROPERTIES
+  IMPORTED_LOCATION
+    "${CMAKE_BINARY_DIR}/third-party/fastdds/fastrtps/libfastrtps.a"
+)
     # Mark new options from FetchContent as advanced options
     mark_as_advanced(FETCHCONTENT_SOURCE_DIR_FASTDDS)
     mark_as_advanced(FETCHCONTENT_UPDATES_DISCONNECTED_FASTDDS)
