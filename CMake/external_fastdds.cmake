@@ -72,7 +72,13 @@ set_target_properties(fastrtps PROPERTIES
     list(POP_BACK CMAKE_MESSAGE_INDENT) # Unindent outputs
 
     add_library(dds INTERFACE)
-    target_link_libraries( dds INTERFACE fastcdr fastrtps )
+    # Include paths from FastDDS targets
+    target_link_libraries(dds INTERFACE 
+    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/third-party/fastdds/fastcdr/libfastcdr.a>
+    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/third-party/fastdds/fastrtps/libfastrtps.a>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_LIBDIR}/libfastcdr.a>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_LIBDIR}/libfastrtps.a>
+)
 
     
     disable_third_party_warnings(fastcdr)  
@@ -81,11 +87,7 @@ set_target_properties(fastrtps PROPERTIES
     add_definitions(-DBUILD_WITH_DDS)
 #install(TARGETS fastrtps EXPORT realsense2Targets) # this breaks, but gives a different error when copied anyway!
 
-set_target_properties(fastcdr PROPERTIES
-  INTERFACE_LINK_LIBRARIES "")
-set_target_properties(fastrtps PROPERTIES
-  INTERFACE_LINK_LIBRARIES "")
-    install(TARGETS fastcdr fastrtps dds EXPORT realsense2Targets)
+    install(TARGETS dds EXPORT realsense2Targets)
     message(CHECK_PASS "Done")
 endfunction()
 
