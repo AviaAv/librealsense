@@ -71,21 +71,30 @@ set_target_properties(fastrtps PROPERTIES
 
     list(POP_BACK CMAKE_MESSAGE_INDENT) # Unindent outputs
 
+    # Create an interface target that will contain everything needed
     add_library(dds INTERFACE)
+    
     # Include paths from FastDDS targets
+    target_include_directories(dds INTERFACE 
+        $<TARGET_PROPERTY:fastcdr,INTERFACE_INCLUDE_DIRECTORIES>
+        $<TARGET_PROPERTY:fastrtps,INTERFACE_INCLUDE_DIRECTORIES>
+    )
+    
+    # Link against the static libraries directly using their paths
     target_link_libraries(dds INTERFACE 
-    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/third-party/fastdds/fastcdr/libfastcdr.a>
-    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/third-party/fastdds/fastrtps/libfastrtps.a>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_LIBDIR}/libfastcdr.a>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_LIBDIR}/libfastrtps.a>
-)
-
+        "${CMAKE_BINARY_DIR}/third-party/fastdds/fastcdr/libfastcdr.a"
+        "${CMAKE_BINARY_DIR}/third-party/fastdds/fastrtps/libfastrtps.a"
+    )
+    
+    # Add any compile definitions needed
+    target_compile_definitions(dds INTERFACE BUILD_WITH_DDS)
     
     disable_third_party_warnings(fastcdr)  
     disable_third_party_warnings(fastrtps)  
 
     add_definitions(-DBUILD_WITH_DDS)
 #install(TARGETS fastrtps EXPORT realsense2Targets) # this breaks, but gives a different error when copied anyway!
+    # Only export our interface target, not the underlying FastDDS targets
 
     install(TARGETS dds EXPORT realsense2Targets)
     message(CHECK_PASS "Done")
