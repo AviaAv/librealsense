@@ -10,7 +10,7 @@ function(get_fastdds)
     mark_as_advanced(FETCHCONTENT_FULLY_DISCONNECTED)
     mark_as_advanced(FETCHCONTENT_UPDATES_DISCONNECTED)
 
-    message(CHECK_START  "Fetching fastdds...")
+    message(CHECK_START  "Fetching fastdds... WE HAVE STARTED TO FETCH FAST DDS")
     list(APPEND CMAKE_MESSAGE_INDENT "  ")  # Indent outputs
 
     FetchContent_Declare(
@@ -24,6 +24,7 @@ function(get_fastdds)
       GIT_SUBMODULES ""     # Submodules will be cloned as part of the FastDDS cmake configure stage
       GIT_SHALLOW ON        # No history needed
       SOURCE_DIR ${CMAKE_BINARY_DIR}/third-party/fastdds
+      EXCLUDE_FROM_ALL 
     )
 
     # Set FastDDS internal variables
@@ -47,6 +48,7 @@ function(get_fastdds)
 
     # Get fastdds
     FetchContent_MakeAvailable(fastdds)
+    
     # point these at wherever your .a files actually live:
 set_target_properties(fastcdr PROPERTIES
   IMPORTED_LOCATION
@@ -57,6 +59,8 @@ set_target_properties(fastrtps PROPERTIES
   IMPORTED_LOCATION
     "${CMAKE_BINARY_DIR}/third-party/fastdds/fastrtps/libfastrtps.a"
 )
+    
+    message(INFO  "Fetching fastdds... WE HAVE STARTED TO FETCH FAST DDS")
     # Mark new options from FetchContent as advanced options
     mark_as_advanced(FETCHCONTENT_SOURCE_DIR_FASTDDS)
     mark_as_advanced(FETCHCONTENT_UPDATES_DISCONNECTED_FASTDDS)
@@ -69,21 +73,19 @@ set_target_properties(fastrtps PROPERTIES
 
     add_library(dds INTERFACE)
     target_link_libraries( dds INTERFACE fastcdr fastrtps )
+
     
     disable_third_party_warnings(fastcdr)  
     disable_third_party_warnings(fastrtps)  
 
     add_definitions(-DBUILD_WITH_DDS)
-    install(
-  TARGETS fastcdr fastrtps
-  ARCHIVE
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}      # e.g. usr/lib/x86_64-linux-gnu
-)
-    
-    install(TARGETS dds 
-    EXPORT realsense2Targets
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}      # copies .a
-    )
+#install(TARGETS fastrtps EXPORT realsense2Targets) # this breaks, but gives a different error when copied anyway!
+
+set_target_properties(fastcdr PROPERTIES
+  INTERFACE_LINK_LIBRARIES "")
+set_target_properties(fastrtps PROPERTIES
+  INTERFACE_LINK_LIBRARIES "")
+    install(TARGETS fastcdr fastrtps dds EXPORT realsense2Targets)
     message(CHECK_PASS "Done")
 endfunction()
 
