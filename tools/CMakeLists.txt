@@ -26,7 +26,7 @@ if(BUILD_TOOLS AND FALSE)
     endif()
 endif()
 
-if(BUILD_EXAMPLES)
+if(BUILD_EXAMPLES AND FALSE)
     if(BUILD_GRAPHICAL_EXAMPLES)
         include(${CMAKE_SOURCE_DIR}/CMake/opengl_config.cmake)
         if (NOT BUILD_GLSL_EXTENSIONS)
