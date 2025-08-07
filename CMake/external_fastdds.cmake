@@ -73,7 +73,8 @@ set_target_properties(fastrtps PROPERTIES
 
     # Create an interface target that will contain everything needed
     add_library(dds INTERFACE)
-    
+    add_dependencies(dds fastcdr fastrtps)
+
     # Include paths from FastDDS targets
     target_include_directories(dds INTERFACE 
         $<TARGET_PROPERTY:fastcdr,INTERFACE_INCLUDE_DIRECTORIES>
@@ -81,10 +82,25 @@ set_target_properties(fastrtps PROPERTIES
     )
     
     # Link against the static libraries directly using their paths
-    target_link_libraries(dds INTERFACE 
-        "${CMAKE_BINARY_DIR}/third-party/fastdds/fastcdr/libfastcdr.a"
-        "${CMAKE_BINARY_DIR}/third-party/fastdds/fastrtps/libfastrtps.a"
-    )
+    if (CMAKE_BUILD_TYPE)
+        message(STATUS "CMAKE_BUILD_TYPE is set to ${CMAKE_BUILD_TYPE}")
+        if (WIN32)
+            target_link_libraries(dds INTERFACE 
+                "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/fastcdr.lib"
+                "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/fastrtps.lib"
+            )
+        else()
+            target_link_libraries(dds INTERFACE 
+                "${CMAKE_BINARY_DIR}/libfastcdr.a"
+                "${CMAKE_BINARY_DIR}/libfastrtps.a"
+            )
+        endif()
+    else()
+        target_link_libraries(dds INTERFACE fastcdr fastrtps)
+    endif()
+
+    message(INFO "libs are at ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/libfastcdr.lib 
+    and ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/libfastrtps.lib")
     
     # Add any compile definitions needed
     target_compile_definitions(dds INTERFACE BUILD_WITH_DDS)
