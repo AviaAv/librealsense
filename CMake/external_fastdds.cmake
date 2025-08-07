@@ -86,8 +86,8 @@ set_target_properties(fastrtps PROPERTIES
         message(STATUS "CMAKE_BUILD_TYPE is set to ${CMAKE_BUILD_TYPE}")
         if (WIN32)
             target_link_libraries(dds INTERFACE 
-                "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/fastcdr.lib"
-                "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/fastrtps.lib"
+                "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/libfastcdrd-1.0.lib"
+                "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/libfastrtpsd-2.10.lib"
             )
         else()
             target_link_libraries(dds INTERFACE 

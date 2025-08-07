@@ -13,7 +13,7 @@ list( APPEND DEPENDENCIES ${LRS_TARGET} tclap )
 # Add all imgui cpp source files and store the list in the IMGUI_SOURCES variable
 file(GLOB IMGUI_SOURCES "../third-party/imgui/*.cpp") 
 
-if(BUILD_TOOLS)
+if(BUILD_TOOLS AND FALSE)
     add_subdirectory(convert)
     add_subdirectory(enumerate-devices)
     add_subdirectory(fw-logger)
