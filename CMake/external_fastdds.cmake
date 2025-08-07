@@ -91,8 +91,8 @@ set_target_properties(fastrtps PROPERTIES
             )
         else()
             target_link_libraries(dds INTERFACE 
-                "${CMAKE_BINARY_DIR}/libfastcdr.a"
-                "${CMAKE_BINARY_DIR}/libfastrtps.a"
+                "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/libfastcdr.a"
+                "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/libfastrtps.a"
             )
         endif()
     else()
