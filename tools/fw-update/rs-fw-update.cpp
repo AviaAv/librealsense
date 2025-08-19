@@ -17,7 +17,12 @@
 
 #include <common/cli.h>
 
-#define WAIT_FOR_DEVICE_TIMEOUT 15
+// Using longer timeout to accommodate PoE devices (like D555e) which may take
+// longer to establish network connection (typically 10-40 seconds)
+#define WAIT_FOR_DEVICE_TIMEOUT 60
+
+// Delay to add before resetting DDS contexts to give the device time to fully disconnect
+#define DDS_RESET_DELAY_MS 1000
 
 #if _WIN32
 #include <io.h>
@@ -155,7 +160,7 @@ void list_devices(rs2::context ctx)
 
 void waiting_for_device_to_reconnect(rs2::context& ctx, rs2::cli::value<std::string>& serial_number_arg)
 {
-    std::cout << std::endl << "Waiting for device to reconnect..." << std::endl;
+    std::cout << std::endl << "Waiting for device to reconnect (this may take up to " << WAIT_FOR_DEVICE_TIMEOUT << " seconds)..." << std::endl;
     std::unique_lock<std::mutex> lk(mutex);
     cv.wait_for(lk, std::chrono::seconds(WAIT_FOR_DEVICE_TIMEOUT), [&] { return !done || new_device; });
 
@@ -258,6 +263,16 @@ bool is_mipi_device(const rs2::device& dev)
     return is_mipi_device;
 }
 
+bool is_dds_device(const rs2::device& dev)
+{
+    if (dev.supports(RS2_CAMERA_INFO_CONNECTION_TYPE))
+    {
+        std::string connection_type = dev.get_info(RS2_CAMERA_INFO_CONNECTION_TYPE);
+        return (connection_type == "DDS");
+    }
+    return false;
+}
+
 int main(int argc, char** argv)
 try
 {
@@ -319,6 +334,7 @@ try
         std::cout << std::endl << "Update to FW: " << file_arg.getValue() << std::endl;
         auto devs = ctx.query_devices();
         rs2::device recovery_device;
+        bool is_dds_recovery = false;
 
         for (auto&& d : devs)
         {
@@ -333,6 +349,7 @@ try
                 return EXIT_FAILURE;
             }
             recovery_device = d;
+            is_dds_recovery = is_dds_device(d);
         }
         if (!recovery_device)
         {
@@ -373,7 +390,32 @@ try
                         return recovery_device_found;
                         }))
                 {
-                    std::cout << "... timed out!" << std::endl;
+                    std::cout << "... timed out after " << WAIT_FOR_DEVICE_TIMEOUT << " seconds!" << std::endl;
+                    // For DDS devices, create a new context after timeout to re-initialize discovery
+                    if (is_dds_recovery)
+                    {
+                        std::cout << "DDS device in recovery mode - attempting to reinitialize context..." << std::endl;
+                        // Wait for device to finish disconnecting
+                        std::this_thread::sleep_for(std::chrono::milliseconds(DDS_RESET_DELAY_MS));
+                        // Create a new context to reinitialize DDS discovery
+                        ctx = rs2::context(settings.dump());
+                        // Check if device is now visible
+                        auto new_devs = ctx.query_devices();
+                        for (auto&& d : new_devs)
+                        {
+                            auto recovery_sn = d.get_info(RS2_CAMERA_INFO_FIRMWARE_UPDATE_ID);
+                            if (recovery_sn == update_serial_number)
+                            {
+                                std::cout << "Device successfully detected after context reinitialization." << std::endl;
+                                if (d.supports(RS2_CAMERA_INFO_FIRMWARE_VERSION))
+                                {
+                                    auto fw = d.get_info(RS2_CAMERA_INFO_FIRMWARE_VERSION);
+                                    std::cout << "Firmware version: " << fw << std::endl;
+                                }
+                                return EXIT_SUCCESS;
+                            }
+                        }
+                    }
                     return EXIT_FAILURE;
                 }
             }
@@ -438,6 +480,7 @@ try
     }
 
     bool device_found = false;
+    bool is_current_device_dds = false;
 
     for (auto&& d : devs)
     {
@@ -462,6 +505,7 @@ try
 
         device_found = true;
         update_serial_number = d.get_info(RS2_CAMERA_INFO_FIRMWARE_UPDATE_ID);
+        is_current_device_dds = is_dds_device(d);
 
         if (backup_arg.isSet())
         {
@@ -598,6 +642,31 @@ try
 
     waiting_for_device_to_reconnect(ctx, serial_number_arg);
 
+    // For DDS devices, if device didn't reconnect, try to reinitialize the context
+    if (is_current_device_dds && !new_device)
+    {
+        std::cout << "DDS device - attempting to reinitialize context to detect device..." << std::endl;
+        // Wait for device to finish disconnecting
+        std::this_thread::sleep_for(std::chrono::milliseconds(DDS_RESET_DELAY_MS));
+        // Create a new context to reinitialize DDS discovery
+        ctx = rs2::context(settings.dump());
+        // Check if device is now visible
+        auto new_devs = ctx.query_devices();
+        for (auto&& d : new_devs)
+        {
+            auto recovery_sn = d.get_info(RS2_CAMERA_INFO_FIRMWARE_UPDATE_ID);
+            if (recovery_sn == update_serial_number)
+            {
+                std::cout << "Device successfully detected after context reinitialization." << std::endl;
+                if (d.supports(RS2_CAMERA_INFO_FIRMWARE_VERSION))
+                {
+                    auto fw = d.get_info(RS2_CAMERA_INFO_FIRMWARE_VERSION);
+                    std::cout << "Firmware version: " << fw << std::endl;
+                }
+                break;
+            }
+        }
+    }
 
     return EXIT_SUCCESS;
 }
