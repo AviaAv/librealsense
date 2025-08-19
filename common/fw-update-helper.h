@@ -16,6 +16,7 @@ namespace rs2
     std::vector<uint8_t> get_default_fw_image(int product_line, const std::string& pid);
     bool is_upgradeable(const std::string& curr, const std::string& available);
     bool is_recommended_fw_available(const std::string& product_line, const std::string& pid);
+    bool is_dds_device(const rs2::device& dev);
 
     class firmware_update_manager : public process_manager
     {

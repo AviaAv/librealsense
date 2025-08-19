@@ -28,6 +28,9 @@ const char* fw_get_D4XX_FW_Image(int) { return NULL; }
 
 constexpr const char* recommended_fw_url = "https://dev.realsenseai.com/docs/firmware-updates";
 
+// Delay to add before resetting DDS contexts to give the device time to fully disconnect
+#define DDS_RESET_DELAY_MS 1000
+
 namespace rs2
 {
     enum firmware_update_ui_state
@@ -84,6 +87,16 @@ namespace rs2
     {
         if (curr == "" || available == "") return false;
         return rsutils::version( curr ) < rsutils::version( available );
+    }
+
+    bool is_dds_device(const rs2::device& dev)
+    {
+        if (dev.supports(RS2_CAMERA_INFO_CONNECTION_TYPE))
+        {
+            std::string connection_type = dev.get_info(RS2_CAMERA_INFO_CONNECTION_TYPE);
+            return (connection_type == "DDS");
+        }
+        return false;
     }
 
     bool firmware_update_manager::check_for(
@@ -303,6 +316,9 @@ namespace rs2
         else
             serial = _dev.query_sensors().front().get_info(RS2_CAMERA_INFO_FIRMWARE_UPDATE_ID);
 
+        // Check if this is a DDS device - we'll need this information later
+        bool is_current_device_dds = is_dds_device(_dev);
+
         // Clear FW update related notification to avoid dismissing the notification on ~device_model()
         // We want the notification alive during the whole process.
         _model.related_notifications.erase(
@@ -382,7 +398,7 @@ namespace rs2
             log("Firmware Update completed, waiting for device to reconnect");
         }
 
-        if (!check_for([this, serial]() {
+        bool device_reconnected = check_for([this, serial]() {
             auto devs = _ctx.query_devices();
 
             for (uint32_t j = 0; j < devs.size(); j++)
@@ -405,10 +421,51 @@ namespace rs2
             }
 
             return false;
-        }, cleanup, std::chrono::seconds(60)))
+        }, cleanup, std::chrono::seconds(60));
+
+        if (!device_reconnected)
         {
-            fail("Original device did not reconnect in time!");
-            return;
+            // For DDS devices, try to reinitialize the context to rediscover the device
+            if (is_current_device_dds)
+            {
+                log("DDS device - attempting to reinitialize context to detect device...");
+                // Wait for device to finish disconnecting
+                std::this_thread::sleep_for(std::chrono::milliseconds(DDS_RESET_DELAY_MS));
+                
+                // Create a new context to reinitialize DDS discovery
+                _ctx = rs2::context();
+                
+                // Check if device is now visible
+                auto new_devs = _ctx.query_devices();
+                for (auto&& d : new_devs)
+                {
+                    try
+                    {
+                        if (d.query_sensors().size() && d.query_sensors().front().supports(RS2_CAMERA_INFO_FIRMWARE_UPDATE_ID))
+                        {
+                            auto s = d.query_sensors().front().get_info(RS2_CAMERA_INFO_FIRMWARE_UPDATE_ID);
+                            if (s == serial)
+                            {
+                                log("Device successfully detected after context reinitialization");
+                                device_reconnected = true;
+                                break;
+                            }
+                        }
+                    }
+                    catch (...) {}
+                }
+                
+                if (!device_reconnected)
+                {
+                    fail("Original device did not reconnect in time!\nThe firmware update might have succeeded, but the device needs a manual reboot");
+                    return;
+                }
+            }
+            else
+            {
+                fail("Original device did not reconnect in time!");
+                return;
+            }
         }
 
         log( "Device reconnected successfully!\n"
