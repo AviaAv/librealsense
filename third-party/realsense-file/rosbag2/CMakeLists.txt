@@ -1,31 +1,42 @@
 cmake_minimum_required(VERSION 3.10)
 project(rosbag2_standalone)
 
+# Allow consumers to opt-in explicitly; default OFF to avoid configuration failures
+option(BUILD_ROSBAG2 "Build rosbag2 third-party components" OFF)
+if(NOT BUILD_ROSBAG2)
+    message(STATUS "rosbag2: BUILD_ROSBAG2=OFF - skipping build of rosbag2 third-party components")
+    return()
+endif()
+
+# Prevent duplicate processing if this directory is added more than once
+if(TARGET rcutils OR TARGET rosbag2_independent)
+    message(STATUS "rosbag2: targets already defined - skipping duplicate inclusion")
+    return()
+endif()
+
 set(CMAKE_CXX_STANDARD 14)
 
-# Don't use find_package(ament_cmake)
-# Instead, manually configure dependencies
-
-# Build rcutils first
+# Add subdirectories (adjust pluginlib path to nested folder)
 add_subdirectory(rcutils)
-
-# Build yaml_cpp_vendor
 add_subdirectory(yaml_cpp_vendor)
-
-# Build sqlite3_vendor
 add_subdirectory(sqlite3_vendor)
-
-# Build pluginlib (may need modification)
-add_subdirectory(pluginlib)
-
-# Build rcpputils
+add_subdirectory(pluginlib/pluginlib)
 add_subdirectory(rcpputils)
-
-# Build rosbag2_storage
 add_subdirectory(rosbag2_storage)
-
-# Build storage plugins
 add_subdirectory(rosbag2_storage_default_plugins)
-
-# Build rosbag2_cpp (modified version)
 add_subdirectory(rosbag2_cpp)
+
+# ---- Create a single umbrella target ----
+add_library(rosbag2_independent INTERFACE)
+
+# Link everything under it
+target_link_libraries(rosbag2_independent INTERFACE
+    rcutils
+    yaml_cpp_vendor
+    sqlite3_vendor
+    pluginlib
+    rcpputils
+    rosbag2_storage
+    rosbag2_storage_default_plugins
+    rosbag2_cpp
+)

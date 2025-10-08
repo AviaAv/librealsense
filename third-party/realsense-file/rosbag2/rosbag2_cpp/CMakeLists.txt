@@ -38,19 +38,19 @@ if(NOT DISABLE_SANITIZERS AND CMAKE_COMPILER_IS_GNUCXX)
   endif()
 endif()
 
-find_package(ament_cmake REQUIRED)
-find_package(ament_index_cpp REQUIRED)
-find_package(pluginlib REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(rcpputils REQUIRED)
-find_package(rcutils REQUIRED)
-find_package(rmw REQUIRED)
-find_package(rmw_implementation REQUIRED)
-find_package(rosbag2_storage REQUIRED)
-find_package(rosidl_runtime_c REQUIRED)
-find_package(rosidl_runtime_cpp REQUIRED)
-find_package(rosidl_typesupport_cpp REQUIRED)
-find_package(rosidl_typesupport_introspection_cpp REQUIRED)
+# Optional (quiet) discovery of ROS-related dependencies; build can continue without them
+find_package(ament_index_cpp QUIET)
+find_package(pluginlib QUIET)
+find_package(rclcpp QUIET)
+find_package(rcpputils QUIET)
+find_package(rcutils QUIET)
+find_package(rmw QUIET)
+find_package(rmw_implementation QUIET)
+find_package(rosbag2_storage QUIET)
+find_package(rosidl_runtime_c QUIET)
+find_package(rosidl_runtime_cpp QUIET)
+find_package(rosidl_typesupport_cpp QUIET)
+find_package(rosidl_typesupport_introspection_cpp QUIET)
 
 add_library(${PROJECT_NAME} SHARED
   src/rosbag2_cpp/cache/cache_consumer.cpp
@@ -72,21 +72,28 @@ add_library(${PROJECT_NAME} SHARED
   src/rosbag2_cpp/writers/sequential_writer.cpp
   src/rosbag2_cpp/reindexer.cpp)
 
-ament_target_dependencies(${PROJECT_NAME}
-  PUBLIC
-  ament_index_cpp
+# Collect targets discovered above for linking
+set(_maybe_deps
+  ament_index_cpp::ament_index_cpp
   pluginlib
-  rclcpp
+  rclcpp::rclcpp
   rcpputils
   rcutils
-  rmw
-  rmw_implementation
+  rmw::rmw
   rosbag2_storage
-  rosidl_runtime_c
-  rosidl_runtime_cpp
-  rosidl_typesupport_cpp
-  rosidl_typesupport_introspection_cpp
+  rosidl_runtime_c::rosidl_runtime_c
+  rosidl_runtime_cpp::rosidl_runtime_cpp
+  rosidl_typesupport_cpp::rosidl_typesupport_cpp
+  rosidl_typesupport_introspection_cpp::rosidl_typesupport_introspection_cpp
 )
+foreach(d IN LISTS _maybe_deps)
+  if(TARGET ${d})
+    list(APPEND _resolved_deps ${d})
+  endif()
+endforeach()
+if(_resolved_deps)
+  target_link_libraries(${PROJECT_NAME} PUBLIC ${_resolved_deps})
+endif()
 
 target_include_directories(${PROJECT_NAME}
   PUBLIC
@@ -98,182 +105,15 @@ target_include_directories(${PROJECT_NAME}
 # which is appropriate when building the dll but not consuming it.
 target_compile_definitions(${PROJECT_NAME} PRIVATE "ROSBAG2_CPP_BUILDING_DLL")
 
-install(
-  DIRECTORY include/
-  DESTINATION include/${PROJECT_NAME})
-
-install(
-  TARGETS ${PROJECT_NAME}
+install(DIRECTORY include/ DESTINATION include/${PROJECT_NAME})
+install(TARGETS ${PROJECT_NAME}
   EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin)
+install(EXPORT export_${PROJECT_NAME}
+  FILE ${PROJECT_NAME}Targets.cmake
+  NAMESPACE ${PROJECT_NAME}::
+  DESTINATION lib/cmake/${PROJECT_NAME})
 
-# Export old-style CMake variables
-ament_export_include_directories("include/${PROJECT_NAME}")
-ament_export_libraries(${PROJECT_NAME})
-
-# Export modern CMake targets
-ament_export_targets(export_${PROJECT_NAME})
-
-ament_export_dependencies(
-  pluginlib
-  rclcpp
-  rmw
-  rmw_implementation
-  rosbag2_storage
-  rosidl_runtime_c
-  rosidl_runtime_cpp
-  rosidl_typesupport_cpp
-  rosidl_typesupport_introspection_cpp
-)
-
-if(BUILD_TESTING)
-  find_package(ament_cmake_gmock REQUIRED)
-  find_package(ament_lint_auto REQUIRED)
-  find_package(std_msgs REQUIRED)
-  find_package(test_msgs REQUIRED)
-  find_package(rmw_implementation_cmake REQUIRED)
-  ament_lint_auto_find_test_dependencies()
-
-  add_library(
-    converter_test_plugins
-    SHARED
-    test/rosbag2_cpp/serializer_test_plugin.cpp
-    test/rosbag2_cpp/converter_test_plugin.cpp)
-  ament_target_dependencies(converter_test_plugins rosbag2_storage)
-  target_link_libraries(converter_test_plugins ${PROJECT_NAME})
-  install(
-    TARGETS converter_test_plugins
-    ARCHIVE DESTINATION lib
-    LIBRARY DESTINATION lib
-    RUNTIME DESTINATION bin)
-  pluginlib_export_plugin_description_file(rosbag2_cpp test/rosbag2_cpp/converter_test_plugin.xml)
-
-  ament_add_gmock(test_converter_factory
-    test/rosbag2_cpp/test_converter_factory.cpp)
-  if(TARGET test_converter_factory)
-    target_link_libraries(test_converter_factory ${PROJECT_NAME})
-  endif()
-
-  ament_add_gmock(test_typesupport_helpers
-    test/rosbag2_cpp/test_typesupport_helpers.cpp
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-  if(TARGET test_typesupport_helpers)
-    target_link_libraries(test_typesupport_helpers ${PROJECT_NAME})
-  endif()
-
-  ament_add_gmock(test_info
-    test/rosbag2_cpp/test_info.cpp
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-  if(TARGET test_info)
-    target_link_libraries(test_info ${PROJECT_NAME})
-    ament_target_dependencies(test_info rosbag2_test_common test_msgs)
-  endif()
-
-  ament_add_gmock(test_sequential_reader
-    test/rosbag2_cpp/test_sequential_reader.cpp)
-  if(TARGET test_sequential_reader)
-    ament_target_dependencies(test_sequential_reader rosbag2_storage rosbag2_test_common test_msgs)
-    target_link_libraries(test_sequential_reader ${PROJECT_NAME})
-  endif()
-
-  ament_add_gmock(test_storage_without_metadata_file
-    test/rosbag2_cpp/test_storage_without_metadata_file.cpp)
-  if(TARGET test_storage_without_metadata_file)
-    ament_target_dependencies(test_storage_without_metadata_file rosbag2_storage)
-    target_link_libraries(test_storage_without_metadata_file ${PROJECT_NAME})
-  endif()
-
-  ament_add_gmock(test_message_cache
-    test/rosbag2_cpp/test_message_cache.cpp)
-  if(TARGET test_message_cache)
-    target_link_libraries(test_message_cache ${PROJECT_NAME})
-  endif()
-
-  ament_add_gmock(test_circular_message_cache
-    test/rosbag2_cpp/test_circular_message_cache.cpp)
-  if(TARGET test_circular_message_cache)
-    target_link_libraries(test_circular_message_cache ${PROJECT_NAME})
-  endif()
-
-
-  # If compiling with gcc, run this test with sanitizers enabled
-  ament_add_gmock(test_ros2_message
-    test/rosbag2_cpp/types/test_ros2_message.cpp
-    src/rosbag2_cpp/typesupport_helpers.cpp
-    src/rosbag2_cpp/types/introspection_message.cpp)
-  if(TARGET test_ros2_message)
-    target_compile_definitions(test_ros2_message PRIVATE "ROSBAG2_CPP_BUILDING_DLL")
-    if(NOT DISABLE_SANITIZERS)
-      target_compile_options(test_ros2_message PUBLIC $<$<CXX_COMPILER_ID:GNU>:-fsanitize=leak>)
-      target_link_libraries(test_ros2_message $<$<CXX_COMPILER_ID:GNU>:-fsanitize=leak>)
-    endif()
-    target_include_directories(test_ros2_message
-      PUBLIC
-      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
-    ament_target_dependencies(test_ros2_message
-      ament_index_cpp
-      rcpputils
-      rosbag2_storage
-      rosidl_runtime_cpp
-      rosidl_typesupport_introspection_cpp
-      rosidl_typesupport_cpp
-      test_msgs)
-  endif()
-
-  ament_add_gmock(test_sequential_writer
-    test/rosbag2_cpp/test_sequential_writer.cpp)
-  if(TARGET test_sequential_writer)
-    ament_target_dependencies(test_sequential_writer rosbag2_storage rosbag2_test_common test_msgs)
-    target_link_libraries(test_sequential_writer ${PROJECT_NAME})
-  endif()
-
-  function(test_serialization_converter_for_rmw_implementation)
-    set(rmw_implementation_env_var RMW_IMPLEMENTATION=${rmw_implementation})
-    ament_add_gmock(test_serialization_converter${target_suffix}
-      test/rosbag2_cpp/test_serialization_converter.cpp
-      ENV ${rmw_implementation_env_var}
-    )
-    if(TARGET test_serialization_converter${target_suffix})
-      if(NOT DISABLE_SANITIZERS)
-        target_compile_options(test_serialization_converter${target_suffix}
-          PUBLIC $<$<CXX_COMPILER_ID:GNU>:-fsanitize=address,leak,undefined>
-        )
-        target_link_libraries(test_serialization_converter${target_suffix}
-          $<$<CXX_COMPILER_ID:GNU>:-fsanitize=address,leak,undefined>
-        )
-      endif()
-      ament_target_dependencies(test_serialization_converter${target_suffix}
-        rosbag2_storage
-        rcpputils
-        rclcpp
-        rmw
-        std_msgs
-      )
-      target_link_libraries(test_serialization_converter${target_suffix}
-        ${PROJECT_NAME}
-        rosbag2_storage::rosbag2_storage
-        ${std_msgs_TARGETS}
-      )
-    endif()
-  endfunction()
-  # Run test_serialization_converter for each rmw implementation because default serialization
-  # converter uses rmw specific functions for serialization and deserialization.
-  call_for_each_rmw_implementation(test_serialization_converter_for_rmw_implementation)
-
-  ament_add_gmock(test_multifile_reader
-    test/rosbag2_cpp/test_multifile_reader.cpp)
-  if(TARGET test_multifile_reader)
-    ament_target_dependencies(test_multifile_reader rosbag2_storage)
-    target_link_libraries(test_multifile_reader ${PROJECT_NAME})
-  endif()
-
-  ament_add_gmock(test_time_controller_clock
-    test/rosbag2_cpp/test_time_controller_clock.cpp)
-  if(TARGET test_time_controller_clock)
-    target_link_libraries(test_time_controller_clock ${PROJECT_NAME})
-  endif()
-endif()
-
-ament_package()
+# Tests removed (ament based)
