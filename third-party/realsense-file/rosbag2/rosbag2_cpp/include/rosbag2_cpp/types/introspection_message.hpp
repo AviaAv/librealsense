@@ -20,7 +20,7 @@
 #include "rcutils/allocator.h"
 #include "rcutils/time.h"
 
-#include "rosidl_typesupport_introspection_cpp/message_introspection.hpp"
+//#include "rosidl_typesupport_introspection_cpp/message_introspection.hpp"
 
 #include "rosbag2_cpp/visibility_control.hpp"
 

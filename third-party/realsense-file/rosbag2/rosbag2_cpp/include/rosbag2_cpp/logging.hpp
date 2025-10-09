@@ -18,7 +18,8 @@
 #include <sstream>
 #include <string>
 
-#include "rcutils/logging_macros.h"
+//#include "rcutils/logging_macros.h"
+#include "rcutils/logging.h"
 
 #define ROSBAG2_CPP_PACKAGE_NAME "rosbag2_cpp"
 

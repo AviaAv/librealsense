@@ -20,7 +20,7 @@
 
 #include "rosbag2_cpp/types/introspection_message.hpp"
 #include "rosbag2_storage/serialized_bag_message.hpp"
-#include "rosidl_runtime_c/message_type_support_struct.h"
+//#include "rosidl_runtime_c/message_type_support_struct.h"
 #include "rosbag2_cpp/visibility_control.hpp"
 
 namespace rosbag2_cpp

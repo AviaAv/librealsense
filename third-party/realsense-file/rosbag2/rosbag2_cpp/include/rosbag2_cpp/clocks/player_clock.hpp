@@ -20,8 +20,8 @@
 #include <functional>
 #include <memory>
 
-#include "rclcpp/clock.hpp"
-#include "rclcpp/time.hpp"
+//#include "rclcpp/clock.hpp"
+//#include "rclcpp/time.hpp"
 #include "rcutils/time.h"
 #include "rosbag2_cpp/visibility_control.hpp"
 
