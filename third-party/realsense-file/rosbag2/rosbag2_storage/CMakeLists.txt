@@ -72,48 +72,5 @@ ament_export_libraries(${PROJECT_NAME})
 ament_export_targets(export_${PROJECT_NAME})
 ament_export_dependencies(pluginlib yaml_cpp_vendor)
 
-if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  find_package(ament_cmake_gmock REQUIRED)
-  find_package(rosbag2_test_common REQUIRED)
-
-  ament_lint_auto_find_test_dependencies()
-
-  add_library(
-    test_plugin
-    SHARED
-    test/rosbag2_storage/test_plugin.cpp
-    test/rosbag2_storage/test_read_only_plugin.cpp)
-  target_link_libraries(test_plugin ${PROJECT_NAME})
-  install(
-    TARGETS test_plugin
-    ARCHIVE DESTINATION lib
-    LIBRARY DESTINATION lib
-    RUNTIME DESTINATION bin)
-  pluginlib_export_plugin_description_file(rosbag2_storage test/rosbag2_storage/test_plugin.xml)
-
-  ament_add_gmock(test_storage_factory
-    test/rosbag2_storage/test_storage_factory.cpp)
-  if(TARGET test_storage_factory)
-    target_include_directories(test_storage_factory PRIVATE include)
-    target_link_libraries(test_storage_factory ${PROJECT_NAME})
-  endif()
-
-  ament_add_gmock(test_ros_helper
-    test/rosbag2_storage/test_ros_helper.cpp)
-  if(TARGET test_ros_helper)
-    target_include_directories(test_ros_helper PRIVATE include)
-    target_link_libraries(test_ros_helper ${PROJECT_NAME})
-  endif()
-
-  ament_add_gmock(test_metadata_serialization
-    test/rosbag2_storage/test_metadata_serialization.cpp)
-  if(TARGET test_metadata_serialization)
-    target_include_directories(test_metadata_serialization PRIVATE include)
-    target_link_libraries(test_metadata_serialization ${PROJECT_NAME})
-    ament_target_dependencies(test_metadata_serialization rosbag2_test_common)
-  endif()
-endif()
-
 ament_package(
   CONFIG_EXTRAS cmake/rosbag2_storage_register_storage_plugin.cmake)
