@@ -94,3 +94,4 @@ librealsense-log.txt
 
 .vscode/*
 /unit-tests/.idea
+/third-party/realsense-file/rosbag2/.vs
