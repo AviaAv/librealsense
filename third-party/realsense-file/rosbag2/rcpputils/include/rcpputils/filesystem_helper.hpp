@@ -434,60 +434,6 @@ inline bool exists(const path & path_to_check)
 
 
 /**
- * \brief Get a path to a location in the temporary directory, if it's available.
- *
- * \return A path to a directory for storing temporary files and directories.
- */
-inline path temp_directory_path()
-{
-#ifdef _WIN32
-#ifdef UNICODE
-#error "rcpputils::fs does not support Unicode paths"
-#endif
-  TCHAR temp_path[MAX_PATH];
-  DWORD size = GetTempPathA(MAX_PATH, temp_path);
-  if (size > MAX_PATH || size == 0) {
-    std::error_code ec(static_cast<int>(GetLastError()), std::system_category());
-    throw std::system_error(ec, "cannot get temporary directory path");
-  }
-  temp_path[size] = '\0';
-#else
-  const char * temp_path = getenv("TMPDIR");
-  if (!temp_path) {
-    temp_path = "/tmp";
-  }
-#endif
-  return path(temp_path);
-}
-
-/**
- * \brief Return current working directory.
- *
- * \return The current working directory.
- *
- * \throws std::system_error
- */
-inline path current_path()
-{
-#ifdef _WIN32
-#ifdef UNICODE
-#error "rcpputils::fs does not support Unicode paths"
-#endif
-  char cwd[MAX_PATH];
-  if (nullptr == _getcwd(cwd, MAX_PATH)) {
-#else
-  char cwd[PATH_MAX];
-  if (nullptr == getcwd(cwd, PATH_MAX)) {
-#endif
-    std::error_code ec{errno, std::system_category()};
-    errno = 0;
-    throw std::system_error{ec, "cannot get current working directory"};
-  }
-
-  return path(cwd);
-}
-
-/**
  * \brief Create a directory with the given path p.
  *
  * This builds directories recursively and will skip directories if they are already created.

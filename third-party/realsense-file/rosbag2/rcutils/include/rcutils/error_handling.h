@@ -50,6 +50,20 @@ extern "C"
   do {fwrite(msg, sizeof(char), strlen(msg), stderr);} while (0)
 #endif
 
+// Provide a safe fprintf-like macro used in logging.c; if not defined previously, define here.
+#ifndef RCUTILS_SAFE_FWRITE_TO_STDERR_WITH_FORMAT_STRING
+#define RCUTILS_SAFE_FWRITE_TO_STDERR_WITH_FORMAT_STRING(format_string, ...) \
+  do { \
+    char rcutils__stderr_buffer[RCUTILS_ERROR_MESSAGE_MAX_LENGTH]; \
+    int rcutils__ret = rcutils_snprintf(rcutils__stderr_buffer, sizeof(rcutils__stderr_buffer), format_string, __VA_ARGS__); \
+    if (rcutils__ret < 0) { \
+      RCUTILS_SAFE_FWRITE_TO_STDERR("Failed to call snprintf for stderr formatting\n"); \
+    } else { \
+      RCUTILS_SAFE_FWRITE_TO_STDERR(rcutils__stderr_buffer); \
+    } \
+  } while (0)
+#endif
+
 // fixed constraints
 #define RCUTILS_ERROR_STATE_LINE_NUMBER_STR_MAX_LENGTH 20  // "18446744073709551615"
 #define RCUTILS_ERROR_FORMATTING_CHARACTERS 6  // ', at ' + ':'
@@ -100,7 +114,7 @@ static_assert(
 #endif
 
 /// Forces initialization of thread-local storage if called in a newly created thread.
-/**
+ /**
  * If this function is not called beforehand, then the first time the error
  * state is set or the first time the error message is retrieved, the default
  * allocator will be used to allocate thread-local storage.
@@ -143,7 +157,7 @@ rcutils_ret_t
 rcutils_initialize_error_handling_thread_local_storage(rcutils_allocator_t allocator);
 
 /// Set the error message, as well as the file and line on which it occurred.
-/**
+ /**
  * This is not meant to be used directly, but instead via the
  * RCUTILS_SET_ERROR_MSG(msg) macro.
  *
@@ -161,7 +175,7 @@ void
 rcutils_set_error_state(const char * error_string, const char * file, size_t line_number);
 
 /// Check an argument for a null value.
-/**
+ /**
  * If the argument's value is `NULL`, set the error message saying so and
  * return the `error_return_type`.
  *
@@ -174,7 +188,7 @@ rcutils_set_error_state(const char * error_string, const char * file, size_t lin
     return error_return_type)
 
 /// Check a value for null, with an error message and error statement.
-/**
+ /**
  * If `value` is `NULL`, the error statement will be evaluated after
  * setting the error message.
  *
@@ -191,7 +205,7 @@ rcutils_set_error_state(const char * error_string, const char * file, size_t lin
   } while (0)
 
 /// Set the error message, as well as append the current file and line number.
-/**
+ /**
  * If an error message was previously set, and rcutils_reset_error() was not called
  * afterwards, and this library was built with RCUTILS_REPORT_ERROR_HANDLING_ERRORS
  * turned on, then the previously set error message will be printed to stderr.
@@ -204,7 +218,7 @@ rcutils_set_error_state(const char * error_string, const char * file, size_t lin
   do {rcutils_set_error_state(msg, __FILE__, __LINE__);} while (0)
 
 /// Set the error message using a format string and format arguments.
-/**
+ /**
  * This function sets the error message using the given format string.
  * The resulting formatted string is silently truncated at
  * RCUTILS_ERROR_MESSAGE_MAX_LENGTH.
@@ -224,7 +238,7 @@ rcutils_set_error_state(const char * error_string, const char * file, size_t lin
   } while (0)
 
 /// Indicate that the function intends to set an error message and return an error value.
-/**
+ /**
  * \def RCUTILS_CAN_SET_MSG_AND_RETURN_WITH_ERROR_OF
  * Indicating macro similar to RCUTILS_CAN_RETURN_WITH_ERROR_OF, that also sets an error
  * message.

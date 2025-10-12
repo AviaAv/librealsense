@@ -10,32 +10,32 @@ if(NOT WIN32)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
 endif()
 
-find_package(ament_cmake REQUIRED)
-find_package(ament_index_cpp REQUIRED)
-find_package(class_loader REQUIRED)
-find_package(rcutils REQUIRED)
-find_package(rcpputils REQUIRED)
-find_package(tinyxml2_vendor REQUIRED)
-find_package(TinyXML2 REQUIRED)  # provided by tinyxml2 upstream, or tinyxml2_vendor
+# Find required packages
+#find_package(class_loader REQUIRED)
+#find_package(TinyXML2 REQUIRED)
 
+# Create interface library
 add_library(${PROJECT_NAME} INTERFACE)
-target_include_directories(${PROJECT_NAME} INTERFACE
-  "$<INSTALL_INTERFACE:include>")
-ament_target_dependencies(${PROJECT_NAME} INTERFACE
-  ament_index_cpp class_loader rcutils rcpputils TinyXML2)
-ament_export_dependencies(ament_index_cpp class_loader rcutils rcpputils tinyxml2_vendor TinyXML2)
-ament_export_include_directories(include)
-ament_export_targets(${PROJECT_NAME})
 
+target_include_directories(${PROJECT_NAME} INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
+#target_link_libraries(${PROJECT_NAME} INTERFACE
+#  class_loader::class_loader
+#  tinyxml2::tinyxml2
+#)
+
+target_link_libraries(${PROJECT_NAME} INTERFACE tinyxml2)
+
+# Filesystem library handling
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_FLAGS MATCHES "-stdlib=libc\\+\\+")
   if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.0)
-    # Before LLVM 7.0, filesystem is part of experimental
     set(FILESYSTEM_LIB c++experimental)
   elseif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
-    # Before LLVM 9.0 you have to manually link the fs library
     set(FILESYSTEM_LIB c++fs)
   else()
-    # Starting at LLVM 9.0 filesystem is built in
     set(FILESYSTEM_LIB)
   endif()
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "QCC")
@@ -49,26 +49,42 @@ else()
 endif()
 
 if(UNIX AND NOT APPLE)
-  # this is needed to use the experimental/filesystem on Linux, but cannot be passed with
-  # ament_export_libraries() because it is not absolute and cannot be found with find_library
-  target_link_libraries(${PROJECT_NAME}
-    INTERFACE ${FILESYSTEM_LIB})
+  target_link_libraries(${PROJECT_NAME} INTERFACE ${FILESYSTEM_LIB})
 endif()
 
-install(
-  TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME}
-)
-
-install(
-  DIRECTORY cmake
-  DESTINATION share/${PROJECT_NAME}
-)
-
-install(
-  DIRECTORY include/
-  DESTINATION include
-)
-
-ament_package(
-  CONFIG_EXTRAS "pluginlib-extras.cmake"
-)
+# # Installation
+# install(TARGETS ${PROJECT_NAME}
+#   EXPORT ${PROJECT_NAME}Targets
+#   LIBRARY DESTINATION lib
+#   ARCHIVE DESTINATION lib
+#   RUNTIME DESTINATION bin
+#   INCLUDES DESTINATION include
+# )
+# 
+# install(DIRECTORY include/
+#   DESTINATION include
+# )
+# 
+# install(DIRECTORY cmake/
+#   DESTINATION share/${PROJECT_NAME}/cmake
+# )
+# 
+# # Export targets
+# install(EXPORT ${PROJECT_NAME}Targets
+#   FILE ${PROJECT_NAME}Targets.cmake
+#   NAMESPACE ${PROJECT_NAME}::
+#   DESTINATION lib/cmake/${PROJECT_NAME}
+# )
+# 
+# Create config file
+# include(CMakePackageConfigHelpers)
+# configure_package_config_file(
+#   ${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in
+#   ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+#   INSTALL_DESTINATION lib/cmake/${PROJECT_NAME}
+# )
+# 
+# install(FILES
+#   ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+#   DESTINATION lib/cmake/${PROJECT_NAME}
+# )

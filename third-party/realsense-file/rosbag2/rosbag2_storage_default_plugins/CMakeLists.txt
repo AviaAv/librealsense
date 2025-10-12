@@ -15,56 +15,60 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 endif()
 
-# Windows supplies macros for min and max by default. We should only use min and max from stl
 if(WIN32)
   add_definitions(-DNOMINMAX)
 endif()
 
-find_package(ament_cmake REQUIRED)
-find_package(pluginlib REQUIRED)
-find_package(rcpputils REQUIRED)
-find_package(rcutils REQUIRED)
-find_package(rosbag2_storage REQUIRED)
-find_package(sqlite3_vendor REQUIRED)
-find_package(SQLite3 REQUIRED)  # provided by sqlite3_vendor
+find_package(rosbag2_storage QUIET)
+find_package(rcpputils QUIET)
+#find_package(rcutils REQUIRED)
+find_package(sqlite3_vendor QUIET)
+find_package(SQLite3 QUIET)
+find_package(pluginlib QUIET)
 
 add_library(${PROJECT_NAME} SHARED
   src/rosbag2_storage_default_plugins/sqlite/sqlite_wrapper.cpp
   src/rosbag2_storage_default_plugins/sqlite/sqlite_storage.cpp
   src/rosbag2_storage_default_plugins/sqlite/sqlite_statement_wrapper.cpp)
 
-ament_target_dependencies(${PROJECT_NAME}
-  rosbag2_storage
-  rcpputils
-  rcutils
-  SQLite3
-  pluginlib)
+set(_deps rosbag2_storage rcpputils rcutils SQLite3 pluginlib)
+foreach(dep IN LISTS _deps)
+  if(${dep}_INCLUDE_DIRS)
+    target_include_directories(${PROJECT_NAME} PUBLIC ${${dep}_INCLUDE_DIRS})
+  endif()
+  if(${dep}_LIBRARIES)
+    target_link_libraries(${PROJECT_NAME} PUBLIC ${${dep}_LIBRARIES})
+  elseif(TARGET ${dep})
+    target_link_libraries(${PROJECT_NAME} PUBLIC ${dep})
+  endif()
+endforeach()
 
 target_include_directories(${PROJECT_NAME}
   PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
 )
 
-# Causes the visibility macros to use dllexport rather than dllimport,
-# which is appropriate when building the dll but not consuming it.
-target_compile_definitions(${PROJECT_NAME} PRIVATE
-  ROSBAG2_STORAGE_DEFAULT_PLUGINS_BUILDING_DLL)
+# Causes the visibility macros to use dllexport rather than dllimport
+ target_compile_definitions(${PROJECT_NAME} PRIVATE ROSBAG2_STORAGE_DEFAULT_PLUGINS_BUILDING_DLL)
 
-pluginlib_export_plugin_description_file(rosbag2_storage plugin_description.xml)
+# # Install plugin description (replacement for pluginlib export macro)
+# install(FILES plugin_description.xml DESTINATION share/${PROJECT_NAME})
+# 
+# include(GNUInstallDirs)
+# install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+# install(TARGETS ${PROJECT_NAME}
+#   EXPORT ${PROJECT_NAME}Targets
+#   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+# 
+# install(EXPORT ${PROJECT_NAME}Targets
+#   FILE ${PROJECT_NAME}Targets.cmake
+#   NAMESPACE ${PROJECT_NAME}::
+#   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+# 
+# file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake "include(\"\${CMAKE_CURRENT_LIST_DIR}/${PROJECT_NAME}Targets.cmake\")")
+# install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+#   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
 
-install(
-  DIRECTORY include/
-  DESTINATION include)
-
-install(
-  TARGETS ${PROJECT_NAME}
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin)
-
-ament_export_include_directories(include)
-ament_export_libraries(${PROJECT_NAME})
-ament_export_dependencies(rosbag2_storage rcpputils rcutils sqlite3_vendor SQLite3)
-
-ament_package()

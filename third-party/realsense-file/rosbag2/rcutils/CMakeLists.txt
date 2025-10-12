@@ -12,11 +12,7 @@ if(NOT CMAKE_CXX_STANDARD)
 endif()
 
 include(CheckLibraryExists)
-
-find_package(ament_cmake_python REQUIRED)
-find_package(ament_cmake_ros REQUIRED)
-
-ament_python_install_package(${PROJECT_NAME})
+include(GNUInstallDirs)
 
 if(UNIX AND NOT APPLE)
   include(cmake/check_c_compiler_uses_glibc.cmake)
@@ -74,46 +70,11 @@ set_source_files_properties(
   ${rcutils_sources}
   PROPERTIES language "C")
 
-# "watch" template/inputs for changes
-configure_file(
-  "resource/logging_macros.h.em"
-  "logging_macros.h.em.watch"
-  COPYONLY)
-configure_file(
-  "rcutils/logging.py"
-  "logging.py.watch"
-  COPYONLY)
-# generate header with logging macros
-set(rcutils_module_path ${CMAKE_CURRENT_SOURCE_DIR})
-set(python_code
-  "import em"  # implicitly added ; between python statements due to CMake list
-  "\
-em.invoke( \
-  [ \
-    '-o', 'include/rcutils/logging_macros.h', \
-    '-D', 'rcutils_module_path=\"${rcutils_module_path}\"', \
-    '${CMAKE_CURRENT_SOURCE_DIR}/resource/logging_macros.h.em' \
-  ] \
-)")
-string(REPLACE ";" "$<SEMICOLON>" python_code "${python_code}")
-add_custom_command(OUTPUT include/rcutils/logging_macros.h
-  COMMAND ${CMAKE_COMMAND} -E make_directory "include/rcutils"
-  COMMAND ${PYTHON_EXECUTABLE} ARGS -c "${python_code}"
-  DEPENDS
-    "${CMAKE_CURRENT_BINARY_DIR}/logging_macros.h.em.watch"
-    "${CMAKE_CURRENT_BINARY_DIR}/logging.py.watch"
-  COMMENT "Expanding logging_macros.h.em"
-  VERBATIM
-)
-list(APPEND rcutils_sources
-  include/rcutils/logging_macros.h)
-
 add_library(
   ${PROJECT_NAME}
   ${rcutils_sources})
 target_include_directories(${PROJECT_NAME} PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-  "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
   "$<INSTALL_INTERFACE:include>")
 
 # Causes the visibility macros to use dllexport rather than dllimport,
@@ -128,20 +89,34 @@ target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS})
 
 # Needed if pthread is used for thread local storage.
 if(IOS AND IOS_SDK_VERSION LESS 10.0)
-  ament_export_libraries(pthread)
+  target_link_libraries(${PROJECT_NAME} pthread)
 endif()
 
-install(TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME}
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin)
-
-ament_export_dependencies(ament_cmake)
-ament_export_include_directories(include)
-ament_export_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS})
-ament_export_targets(${PROJECT_NAME})
-ament_package()
+# Installation
+install(TARGETS ${PROJECT_NAME}
+  EXPORT ${PROJECT_NAME}Targets
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 install(
-  DIRECTORY include/ ${CMAKE_CURRENT_BINARY_DIR}/include/
-  DESTINATION include)
+  DIRECTORY include/
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+# Export targets for downstream projects
+install(EXPORT ${PROJECT_NAME}Targets
+  FILE ${PROJECT_NAME}Targets.cmake
+  NAMESPACE ${PROJECT_NAME}::
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+
+# Create config file
+# include(CMakePackageConfigHelpers)
+# configure_package_config_file(
+#   ${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in
+#   ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+#   INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+# )
+# 
+# install(FILES
+#   ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+#   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})

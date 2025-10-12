@@ -20,11 +20,10 @@ if(WIN32)
   add_definitions(-DNOMINMAX)
 endif()
 
-find_package(ament_cmake REQUIRED)
-find_package(pluginlib REQUIRED)
-find_package(rcpputils REQUIRED)
-find_package(rcutils REQUIRED)
-find_package(yaml_cpp_vendor REQUIRED)
+# Removed ament; use plain find_package for dependencies (they must be available or optional)
+find_package(pluginlib QUIET)
+find_package(rcpputils QUIET)
+#find_package(rcutils REQUIRED) # local project
 
 add_library(
   ${PROJECT_NAME}
@@ -33,17 +32,27 @@ add_library(
   src/rosbag2_storage/ros_helper.cpp
   src/rosbag2_storage/storage_factory.cpp
   src/rosbag2_storage/base_io_interface.cpp)
+
 target_include_directories(${PROJECT_NAME}
   PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
 )
-ament_target_dependencies(
-  ${PROJECT_NAME}
-  pluginlib
-  rcpputils
-  rcutils
-  yaml_cpp_vendor)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC yaml-cpp::yaml-cpp)
+
+# Link dependencies similarly to ament_target_dependencies
+set(_deps pluginlib rcpputils rcutils)
+foreach(dep IN LISTS _deps)
+  if(${dep}_INCLUDE_DIRS)
+    target_include_directories(${PROJECT_NAME} PUBLIC ${${dep}_INCLUDE_DIRS})
+  endif()
+  if(${dep}_LIBRARIES)
+    target_link_libraries(${PROJECT_NAME} PUBLIC ${${dep}_LIBRARIES})
+  elseif(TARGET ${dep})
+    target_link_libraries(${PROJECT_NAME} PUBLIC ${dep})
+  endif()
+endforeach()
 
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
@@ -52,25 +61,28 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE "ROSBAG2_STORAGE_BUILDING_DLL
 # prevent pluginlib from using boost
 target_compile_definitions(${PROJECT_NAME} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
-install(
-  DIRECTORY include/
-  DESTINATION include)
+# Installation
+include(GNUInstallDirs)
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(TARGETS ${PROJECT_NAME}
+  EXPORT ${PROJECT_NAME}Targets
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(DIRECTORY cmake DESTINATION share/${PROJECT_NAME})
 
-install(
-  TARGETS ${PROJECT_NAME}
-  EXPORT export_${PROJECT_NAME}
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin)
+# # Export targets
+# install(EXPORT ${PROJECT_NAME}Targets
+#   FILE ${PROJECT_NAME}Targets.cmake
+#   NAMESPACE ${PROJECT_NAME}::
+#   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
 
-install(
-  DIRECTORY cmake
-  DESTINATION share/${PROJECT_NAME})
-
-ament_export_include_directories(include)
-ament_export_libraries(${PROJECT_NAME})
-ament_export_targets(export_${PROJECT_NAME})
-ament_export_dependencies(pluginlib yaml_cpp_vendor)
-
-ament_package(
-  CONFIG_EXTRAS cmake/rosbag2_storage_register_storage_plugin.cmake)
+# # Basic Config file (any extra macros formerly in ament_package omitted)
+# include(CMakePackageConfigHelpers)
+# configure_package_config_file(${CMAKE_CURRENT_LIST_DIR}/cmake/rosbag2_storage-config.cmake.in
+#   ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+#   INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+#   NO_SET_AND_CHECK_MACRO
+#   NO_CHECK_REQUIRED_COMPONENTS_MACRO)
+# install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+#   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
