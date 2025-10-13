@@ -27,7 +27,9 @@ target_include_directories(${PROJECT_NAME} INTERFACE
 #  tinyxml2::tinyxml2
 #)
 
-target_link_libraries(${PROJECT_NAME} INTERFACE tinyxml2)
+target_link_libraries(${PROJECT_NAME} INTERFACE tinyxml2 
+    class_loader
+    ament_index_cpp)
 
 # Filesystem library handling
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_FLAGS MATCHES "-stdlib=libc\\+\\+")

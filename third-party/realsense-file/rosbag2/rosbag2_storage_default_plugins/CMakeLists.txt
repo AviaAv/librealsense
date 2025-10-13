@@ -21,17 +21,17 @@ endif()
 
 find_package(rosbag2_storage QUIET)
 find_package(rcpputils QUIET)
-#find_package(rcutils REQUIRED)
-find_package(sqlite3_vendor QUIET)
-find_package(SQLite3 QUIET)
 find_package(pluginlib QUIET)
+
 
 add_library(${PROJECT_NAME} SHARED
   src/rosbag2_storage_default_plugins/sqlite/sqlite_wrapper.cpp
   src/rosbag2_storage_default_plugins/sqlite/sqlite_storage.cpp
   src/rosbag2_storage_default_plugins/sqlite/sqlite_statement_wrapper.cpp)
 
-set(_deps rosbag2_storage rcpputils rcutils SQLite3 pluginlib)
+target_link_libraries(${PROJECT_NAME} PUBLIC SQLite::SQLite3)
+
+set(_deps rosbag2_storage rcpputils rcutils pluginlib)
 foreach(dep IN LISTS _deps)
   if(${dep}_INCLUDE_DIRS)
     target_include_directories(${PROJECT_NAME} PUBLIC ${${dep}_INCLUDE_DIRS})

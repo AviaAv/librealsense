@@ -30,17 +30,26 @@ set(YAML_CPP_DISABLE_UNINSTALL ON CACHE BOOL "" FORCE)
 
 FetchContent_MakeAvailable(yaml-cpp)
 
-# sqlite3 with CMake support
+# Force SQLite to export all symbols on Windows so the .lib is generated
+# There's probably a better way to do it but it works for now - either have the folder on the repo, or pass the flag
+# if there's no better way, we can and should restore the old flag
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
 FetchContent_Declare(
     sqlite3
     GIT_REPOSITORY https://github.com/sjinks/sqlite3-cmake
-    GIT_TAG v3.49.1  # latest stable version
+    GIT_TAG v3.49.1
 )
 FetchContent_MakeAvailable(sqlite3)
+
+# Reset it so it doesn't affect other libraries
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS OFF)
+
 
 add_library(tinyxml2 STATIC tinyxml2/tinyxml2.cpp)
 target_include_directories(tinyxml2 PUBLIC tinyxml2)
 
+set(CLASS_LOADER_IGNORE_AMENT TRUE CACHE BOOL "Do not use ament" FORCE) # for class_loader
 
 # Add subdirectories (adjust pluginlib path to nested folder)
 add_subdirectory(rcutils)
@@ -48,6 +57,10 @@ add_subdirectory(pluginlib)
 add_subdirectory(rcpputils)
 add_subdirectory(rosbag2_storage)
 add_subdirectory(rosbag2_storage_default_plugins)
+add_subdirectory(console_bridge)
+add_subdirectory(class_loader)
+add_subdirectory(ament_index_cpp)
+
 
 # ---- Create a single umbrella target ----
 add_library(rosbag2_independent INTERFACE)
@@ -62,4 +75,6 @@ target_link_libraries(rosbag2_independent INTERFACE
     rcpputils
     rosbag2_storage
     rosbag2_storage_default_plugins
+    class_loader
+    ament_index_cpp
 )
