@@ -8,6 +8,7 @@ FILE(GLOB_RECURSE AllSources
         ${ROSBAG_DIR}/*.h
         ${ROSBAG_DIR}/*.cpp
         ${ROSBAG_DIR}/*.c
+        ${MCAP_INCLUDE_DIR}/mcap-impl.cpp
         )
 
 if (USE_EXTERNAL_LZ4)
@@ -36,6 +37,17 @@ target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_11)
 target_include_directories(${PROJECT_NAME} PRIVATE
         ${ROSBAG_HEADER_DIRS}
         $<$<NOT:$<BOOL:${USE_EXTERNAL_LZ4}>>:${LZ4_INCLUDE_PATH}>
+)
+
+target_include_directories(${PROJECT_NAME} PUBLIC
+        $<BUILD_INTERFACE:${MCAP_INCLUDE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
+)
+
+# Disable MCAP compression support
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+        MCAP_COMPRESSION_NO_LZ4
+        MCAP_COMPRESSION_NO_ZSTD
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
