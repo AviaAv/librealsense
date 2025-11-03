@@ -7,7 +7,7 @@
 #include <functional>
 #include <limits>
 #include <memory>
-#include <optional>
+//#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -21,7 +21,7 @@ using ChannelId = uint16_t;
 using Timestamp = uint64_t;
 using ByteOffset = uint64_t;
 using KeyValueMap = std::unordered_map<std::string, std::string>;
-using ByteArray = std::vector<std::byte>;
+using ByteArray = std::vector<mcap14::byte>;
 using ProblemCallback = std::function<void(const Status&)>;
 
 constexpr char SpecVersion = '0';
@@ -78,7 +78,7 @@ enum struct OpCode : uint8_t {
  * @brief Get the string representation of an OpCode.
  */
 MCAP_PUBLIC
-constexpr std::string_view OpCodeString(OpCode opcode);
+constexpr mcap14::string_view OpCodeString(OpCode opcode);
 
 /**
  * @brief A generic Type-Length-Value record using a uint8 type and uint64
@@ -87,7 +87,7 @@ constexpr std::string_view OpCodeString(OpCode opcode);
 struct MCAP_PUBLIC Record {
   OpCode opcode;
   uint64_t dataSize;
-  std::byte* data;
+  mcap14::byte* data;
 
   uint64_t recordSize() const {
     return sizeof(opcode) + sizeof(dataSize) + dataSize;
@@ -137,14 +137,14 @@ struct MCAP_PUBLIC Schema {
 
   Schema() = default;
 
-  Schema(const std::string_view _name, const std::string_view _encoding,
-         const std::string_view _data)
+  Schema(const mcap14::string_view _name, const mcap14::string_view _encoding,
+         const mcap14::string_view _data)
       : name(_name)
       , encoding(_encoding)
-      , data{reinterpret_cast<const std::byte*>(_data.data()),
-             reinterpret_cast<const std::byte*>(_data.data() + _data.size())} {}
+      , data{reinterpret_cast<const mcap14::byte*>(_data.data()),
+             reinterpret_cast<const mcap14::byte*>(_data.data() + _data.size())} {}
 
-  Schema(const std::string_view _name, const std::string_view _encoding, const ByteArray& _data)
+  Schema(const mcap14::string_view _name, const mcap14::string_view _encoding, const ByteArray& _data)
       : name(_name)
       , encoding(_encoding)
       , data{_data} {}
@@ -166,7 +166,7 @@ struct MCAP_PUBLIC Channel {
 
   Channel() = default;
 
-  Channel(const std::string_view _topic, const std::string_view _messageEncoding,
+  Channel(const mcap14::string_view _topic, const mcap14::string_view _messageEncoding,
           SchemaId _schemaId, const KeyValueMap& _metadata = {})
       : topic(_topic)
       , messageEncoding(_messageEncoding)
@@ -206,7 +206,7 @@ struct MCAP_PUBLIC Message {
    * valid for the lifetime of an onMessage callback or before the message
    * iterator is advanced.
    */
-  const std::byte* data = nullptr;
+  const mcap14::byte* data = nullptr;
 };
 
 /**
@@ -220,7 +220,7 @@ struct MCAP_PUBLIC Chunk {
   uint32_t uncompressedCrc;
   std::string compression;
   ByteOffset compressedSize;
-  const std::byte* records = nullptr;
+  const mcap14::byte* records = nullptr;
 };
 
 /**
@@ -260,7 +260,7 @@ struct MCAP_PUBLIC Attachment {
   std::string name;
   std::string mediaType;
   uint64_t dataSize;
-  const std::byte* data = nullptr;
+  const mcap14::byte* data = nullptr;
   uint32_t crc;
 };
 
@@ -354,7 +354,7 @@ struct MCAP_PUBLIC DataEnd {
 
 struct MCAP_PUBLIC RecordOffset {
   ByteOffset offset;
-  std::optional<ByteOffset> chunkOffset;
+  mcap14::optional<ByteOffset> chunkOffset;
 
   RecordOffset() = default;
   explicit RecordOffset(ByteOffset offset_)

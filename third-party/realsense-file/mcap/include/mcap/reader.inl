@@ -17,20 +17,20 @@ bool CompareChunkIndexes(const ChunkIndex& a, const ChunkIndex& b) {
 
 // BufferReader ////////////////////////////////////////////////////////////////
 
-void BufferReader::reset(const std::byte* data, uint64_t size, uint64_t uncompressedSize) {
+void BufferReader::reset(const mcap14::byte* data, uint64_t size, uint64_t uncompressedSize) {
   (void)uncompressedSize;
   assert(size == uncompressedSize);
   data_ = data;
   size_ = size;
 }
 
-uint64_t BufferReader::read(std::byte** output, uint64_t offset, uint64_t size) {
+uint64_t BufferReader::read(mcap14::byte** output, uint64_t offset, uint64_t size) {
   if (!data_ || offset >= size_) {
     return 0;
   }
 
   const auto available = size_ - offset;
-  *output = const_cast<std::byte*>(data_) + offset;
+  *output = const_cast<mcap14::byte*>(data_) + offset;
   return std::min(size, available);
 }
 
@@ -60,7 +60,7 @@ uint64_t FileReader::size() const {
   return size_;
 }
 
-uint64_t FileReader::read(std::byte** output, uint64_t offset, uint64_t size) {
+uint64_t FileReader::read(mcap14::byte** output, uint64_t offset, uint64_t size) {
   if (offset >= size_) {
     return 0;
   }
@@ -99,7 +99,7 @@ uint64_t FileStreamReader::size() const {
   return size_;
 }
 
-uint64_t FileStreamReader::read(std::byte** output, uint64_t offset, uint64_t size) {
+uint64_t FileStreamReader::read(mcap14::byte** output, uint64_t offset, uint64_t size) {
   if (offset >= size_) {
     return 0;
   }
@@ -141,7 +141,7 @@ LZ4Reader::~LZ4Reader() {
   }
 }
 
-void LZ4Reader::reset(const std::byte* data, uint64_t size, uint64_t uncompressedSize) {
+void LZ4Reader::reset(const mcap14::byte* data, uint64_t size, uint64_t uncompressedSize) {
   if (!decompressionContext_) {
     return;
   }
@@ -151,7 +151,7 @@ void LZ4Reader::reset(const std::byte* data, uint64_t size, uint64_t uncompresse
   uncompressedSize_ = uncompressedData_.size();
 }
 
-uint64_t LZ4Reader::read(std::byte** output, uint64_t offset, uint64_t size) {
+uint64_t LZ4Reader::read(mcap14::byte** output, uint64_t offset, uint64_t size) {
   if (offset >= uncompressedSize_) {
     return 0;
   }
@@ -168,7 +168,7 @@ uint64_t LZ4Reader::size() const {
 Status LZ4Reader::status() const {
   return status_;
 }
-Status LZ4Reader::decompressAll(const std::byte* data, uint64_t compressedSize,
+Status LZ4Reader::decompressAll(const mcap14::byte* data, uint64_t compressedSize,
                                 uint64_t uncompressedSize, ByteArray* output) {
   if (!decompressionContext_) {
     return status_;
@@ -216,11 +216,11 @@ Status LZ4Reader::decompressAll(const std::byte* data, uint64_t compressedSize,
 // ZStdReader //////////////////////////////////////////////////////////////////
 
 #ifndef MCAP_COMPRESSION_NO_ZSTD
-void ZStdReader::reset(const std::byte* data, uint64_t size, uint64_t uncompressedSize) {
+void ZStdReader::reset(const mcap14::byte* data, uint64_t size, uint64_t uncompressedSize) {
   status_ = DecompressAll(data, size, uncompressedSize, &uncompressedData_);
 }
 
-uint64_t ZStdReader::read(std::byte** output, uint64_t offset, uint64_t size) {
+uint64_t ZStdReader::read(mcap14::byte** output, uint64_t offset, uint64_t size) {
   if (offset >= uncompressedData_.size()) {
     return 0;
   }
@@ -238,7 +238,7 @@ Status ZStdReader::status() const {
   return status_;
 }
 
-Status ZStdReader::DecompressAll(const std::byte* data, uint64_t compressedSize,
+Status ZStdReader::DecompressAll(const mcap14::byte* data, uint64_t compressedSize,
                                  uint64_t uncompressedSize, ByteArray* output) {
   auto result = Status();
 
@@ -279,7 +279,7 @@ Status McapReader::open(IReadable& reader) {
     return StatusCode::FileTooSmall;
   }
 
-  std::byte* data = nullptr;
+  mcap14::byte* data = nullptr;
   uint64_t bytesRead;
 
   // Read the magic bytes and header up to the first variable length string
@@ -322,7 +322,7 @@ Status McapReader::open(IReadable& reader) {
   return StatusCode::Success;
 }
 
-Status McapReader::open(std::string_view filename) {
+Status McapReader::open(mcap14::string_view filename) {
   if (file_) {
     std::fclose(file_);
     file_ = nullptr;
@@ -439,10 +439,10 @@ Status McapReader::readSummarySection_(IReadable& reader) {
   // Read the Summary section
   bool readStatistics = false;
   TypedRecordReader typedReader{reader, summaryStart, summaryOffsetStart};
-  typedReader.onSchema = [&](SchemaPtr schemaPtr, ByteOffset, std::optional<ByteOffset>) {
+  typedReader.onSchema = [&](SchemaPtr schemaPtr, ByteOffset, mcap14::optional<ByteOffset>) {
     schemas_.try_emplace(schemaPtr->id, schemaPtr);
   };
-  typedReader.onChannel = [&](ChannelPtr channelPtr, ByteOffset, std::optional<ByteOffset>) {
+  typedReader.onChannel = [&](ChannelPtr channelPtr, ByteOffset, mcap14::optional<ByteOffset>) {
     channels_.try_emplace(channelPtr->id, channelPtr);
   };
   typedReader.onAttachmentIndex = [&](const AttachmentIndex& attachmentIndex, ByteOffset) {
@@ -496,10 +496,10 @@ Status McapReader::readSummaryFromScan_(IReadable& reader) {
   chunkIndexes_.clear();
 
   TypedRecordReader typedReader{reader, dataStart_, dataEnd_};
-  typedReader.onSchema = [&](SchemaPtr schemaPtr, ByteOffset, std::optional<ByteOffset>) {
+  typedReader.onSchema = [&](SchemaPtr schemaPtr, ByteOffset, mcap14::optional<ByteOffset>) {
     schemas_.try_emplace(schemaPtr->id, schemaPtr);
   };
-  typedReader.onChannel = [&](ChannelPtr channelPtr, ByteOffset, std::optional<ByteOffset>) {
+  typedReader.onChannel = [&](ChannelPtr channelPtr, ByteOffset, mcap14::optional<ByteOffset>) {
     channels_.try_emplace(channelPtr->id, channelPtr);
   };
   typedReader.onAttachment = [&](const Attachment& attachment, ByteOffset fileOffset) {
@@ -524,7 +524,7 @@ Status McapReader::readSummaryFromScan_(IReadable& reader) {
 
     chunkIndexes_.emplace_back(std::move(chunkIndex));
   };
-  typedReader.onMessage = [&](const Message& message, ByteOffset, std::optional<ByteOffset>) {
+  typedReader.onMessage = [&](const Message& message, ByteOffset, mcap14::optional<ByteOffset>) {
     if (message.logTime < statistics.messageStartTime) {
       statistics.messageStartTime = message.logTime;
     }
@@ -609,15 +609,15 @@ IReadable* McapReader::dataSource() {
   return input_;
 }
 
-const std::optional<Header>& McapReader::header() const {
+const mcap14::optional<Header>& McapReader::header() const {
   return header_;
 }
 
-const std::optional<Footer>& McapReader::footer() const {
+const mcap14::optional<Footer>& McapReader::footer() const {
   return footer_;
 }
 
-const std::optional<Statistics>& McapReader::statistics() const {
+const mcap14::optional<Statistics>& McapReader::statistics() const {
   return statistics_;
 }
 
@@ -661,7 +661,7 @@ Status McapReader::ReadRecord(IReadable& reader, uint64_t offset, Record* record
   }
 
   // Read opcode and length
-  std::byte* data;
+  mcap14::byte* data;
   uint64_t bytesRead = reader.read(&data, offset, 9);
   if (bytesRead != 9) {
     return StatusCode::ReadFailed;
@@ -692,7 +692,7 @@ Status McapReader::ReadRecord(IReadable& reader, uint64_t offset, Record* record
 }
 
 Status McapReader::ReadFooter(IReadable& reader, uint64_t offset, Footer* footer) {
-  std::byte* data;
+  mcap14::byte* data;
   uint64_t bytesRead = reader.read(&data, offset, internal::FooterLength);
   if (bytesRead != internal::FooterLength) {
     return StatusCode::ReadFailed;
@@ -740,7 +740,7 @@ Status McapReader::ParseHeader(const Record& record, Header* header) {
     return status;
   }
   const size_t libraryOffset = 4 + header->profile.size();
-  const std::byte* libraryData = &(record.data[libraryOffset]);
+  const mcap14::byte* libraryData = &(record.data[libraryOffset]);
   const size_t maxSize = record.dataSize - libraryOffset;
   auto status = internal::ParseString(libraryData, maxSize, &header->library);
   if (!status.ok()) {
@@ -1204,7 +1204,7 @@ Status McapReader::ParseDataEnd(const Record& record, DataEnd* dataEnd) {
   return StatusCode::Success;
 }
 
-std::optional<Compression> McapReader::ParseCompression(const std::string_view compression) {
+mcap14::optional<Compression> McapReader::ParseCompression(const mcap14::string_view compression) {
   if (compression == "") {
     return Compression::None;
   } else if (compression == "lz4") {
@@ -1233,7 +1233,7 @@ void RecordReader::reset(IReadable& dataSource, ByteOffset startOffset, ByteOffs
   curRecord_ = {};
 }
 
-std::optional<Record> RecordReader::next() {
+mcap14::optional<Record> RecordReader::next() {
   if (!dataSource_ || offset >= endOffset) {
     return std::nullopt;
   }
@@ -1640,15 +1640,15 @@ LinearMessageView::Iterator::Impl::Impl(LinearMessageView& view)
     recordReader_.emplace(*(view_.mcapReader_.dataSource()), dataStart, dataEnd);
 
     recordReader_->onSchema = [this](const SchemaPtr schema, ByteOffset,
-                                     std::optional<ByteOffset>) {
+                                     mcap14::optional<ByteOffset>) {
       view_.mcapReader_.schemas_.insert_or_assign(schema->id, schema);
     };
     recordReader_->onChannel = [this](const ChannelPtr channel, ByteOffset,
-                                      std::optional<ByteOffset>) {
+                                      mcap14::optional<ByteOffset>) {
       view_.mcapReader_.channels_.insert_or_assign(channel->id, channel);
     };
     recordReader_->onMessage = [this](const Message& message, ByteOffset messageStartOffset,
-                                      std::optional<ByteOffset> chunkStartOffset) {
+                                      mcap14::optional<ByteOffset> chunkStartOffset) {
       RecordOffset offset;
       offset.chunkOffset = chunkStartOffset;
       offset.offset = messageStartOffset;

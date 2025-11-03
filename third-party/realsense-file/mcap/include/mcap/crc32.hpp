@@ -53,7 +53,7 @@ public:
   }
 };
 
-inline uint32_t getUint32LE(const std::byte* data) {
+inline uint32_t getUint32LE(const mcap14::byte* data) {
   return (uint32_t(data[0]) << 0) | (uint32_t(data[1]) << 8) | (uint32_t(data[2]) << 16) |
          (uint32_t(data[3]) << 24);
 }
@@ -71,7 +71,7 @@ static constexpr uint32_t CRC32_INIT = 0xffffffff;
  * For performance, this implementation processes the data 8 bytes at a time, using the algorithm
  * presented at: https://github.com/komrad36/CRC#option-9-8-byte-tabular
  */
-inline uint32_t crc32Update(const uint32_t prev, const std::byte* const data, const size_t length) {
+inline uint32_t crc32Update(const uint32_t prev, const mcap14::byte* const data, const size_t length) {
   // Process bytes one by one until we reach the proper alignment.
   uint32_t r = prev;
   size_t offset = 0;

@@ -9,6 +9,8 @@ FILE(GLOB_RECURSE AllSources
         ${ROSBAG_DIR}/*.cpp
         ${ROSBAG_DIR}/*.c
         ${MCAP_INCLUDE_DIR}/mcap-impl.cpp
+        ${MCAP_INCLUDE_DIR}/*.h
+        ${MAPBOX_INCLUDE_DIR}/*.hpp
         )
 
 if (USE_EXTERNAL_LZ4)

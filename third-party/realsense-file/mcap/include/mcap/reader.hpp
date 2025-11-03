@@ -8,7 +8,7 @@
 #include <fstream>
 #include <map>
 #include <memory>
-#include <optional>
+//#include <optional>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -65,7 +65,7 @@ struct MCAP_PUBLIC IReadable {
    *   be readable from `output` to `output + size`. If the read fails, this
    *   method should return 0.
    */
-  virtual uint64_t read(std::byte** output, uint64_t offset, uint64_t size) = 0;
+  virtual uint64_t read(mcap14::byte** output, uint64_t offset, uint64_t size) = 0;
 };
 
 /**
@@ -77,11 +77,11 @@ public:
   FileReader(std::FILE* file);
 
   uint64_t size() const override;
-  uint64_t read(std::byte** output, uint64_t offset, uint64_t size) override;
+  uint64_t read(mcap14::byte** output, uint64_t offset, uint64_t size) override;
 
 private:
   std::FILE* file_;
-  std::vector<std::byte> buffer_;
+  std::vector<mcap14::byte> buffer_;
   uint64_t size_;
   uint64_t position_;
 };
@@ -94,11 +94,11 @@ public:
   FileStreamReader(std::ifstream& stream);
 
   uint64_t size() const override;
-  uint64_t read(std::byte** output, uint64_t offset, uint64_t size) override;
+  uint64_t read(mcap14::byte** output, uint64_t offset, uint64_t size) override;
 
 private:
   std::ifstream& stream_;
-  std::vector<std::byte> buffer_;
+  std::vector<mcap14::byte> buffer_;
   uint64_t size_;
   uint64_t position_;
 };
@@ -119,7 +119,7 @@ public:
    * @param uncompressedSize Size of the data in bytes after decompression. A
    *   buffer of this size will be allocated for the uncompressed data.
    */
-  virtual void reset(const std::byte* data, uint64_t size, uint64_t uncompressedSize) = 0;
+  virtual void reset(const mcap14::byte* data, uint64_t size, uint64_t uncompressedSize) = 0;
   /**
    * @brief Report the current status of decompression. A StatusCode other than
    * `StatusCode::Success` after `reset()` is called indicates the decompression
@@ -134,8 +134,8 @@ public:
  */
 class MCAP_PUBLIC BufferReader final : public ICompressedReader {
 public:
-  void reset(const std::byte* data, uint64_t size, uint64_t uncompressedSize) override;
-  uint64_t read(std::byte** output, uint64_t offset, uint64_t size) override;
+  void reset(const mcap14::byte* data, uint64_t size, uint64_t uncompressedSize) override;
+  uint64_t read(mcap14::byte** output, uint64_t offset, uint64_t size) override;
   uint64_t size() const override;
   Status status() const override;
 
@@ -146,7 +146,7 @@ public:
   BufferReader& operator=(BufferReader&&) = delete;
 
 private:
-  const std::byte* data_;
+  const mcap14::byte* data_;
   uint64_t size_;
 };
 
@@ -157,8 +157,8 @@ private:
  */
 class MCAP_PUBLIC ZStdReader final : public ICompressedReader {
 public:
-  void reset(const std::byte* data, uint64_t size, uint64_t uncompressedSize) override;
-  uint64_t read(std::byte** output, uint64_t offset, uint64_t size) override;
+  void reset(const mcap14::byte* data, uint64_t size, uint64_t uncompressedSize) override;
+  uint64_t read(mcap14::byte** output, uint64_t offset, uint64_t size) override;
   uint64_t size() const override;
   Status status() const override;
 
@@ -172,7 +172,7 @@ public:
    * or 0 if the decompression encountered an error.
    * @return Status
    */
-  static Status DecompressAll(const std::byte* data, uint64_t compressedSize,
+  static Status DecompressAll(const mcap14::byte* data, uint64_t compressedSize,
                               uint64_t uncompressedSize, ByteArray* output);
   ZStdReader() = default;
   ZStdReader(const ZStdReader&) = delete;
@@ -193,8 +193,8 @@ private:
  */
 class MCAP_PUBLIC LZ4Reader final : public ICompressedReader {
 public:
-  void reset(const std::byte* data, uint64_t size, uint64_t uncompressedSize) override;
-  uint64_t read(std::byte** output, uint64_t offset, uint64_t size) override;
+  void reset(const mcap14::byte* data, uint64_t size, uint64_t uncompressedSize) override;
+  uint64_t read(mcap14::byte** output, uint64_t offset, uint64_t size) override;
   uint64_t size() const override;
   Status status() const override;
 
@@ -208,7 +208,7 @@ public:
    * or 0 if the decompression encountered an error.
    * @return Status
    */
-  Status decompressAll(const std::byte* data, uint64_t size, uint64_t uncompressedSize,
+  Status decompressAll(const mcap14::byte* data, uint64_t size, uint64_t uncompressedSize,
                        ByteArray* output);
   LZ4Reader();
   LZ4Reader(const LZ4Reader&) = delete;
@@ -220,7 +220,7 @@ public:
 private:
   void* decompressionContext_ = nullptr;  // LZ4F_dctx*
   Status status_;
-  const std::byte* compressedData_;
+  const mcap14::byte* compressedData_;
   ByteArray uncompressedData_;
   uint64_t compressedSize_;
   uint64_t uncompressedSize_;
@@ -247,7 +247,7 @@ public:
    * `topicFilter` returns true for a given channel, messages from that channel will be included.
    * if not provided, messages from all channels are provided.
    */
-  std::function<bool(std::string_view)> topicFilter;
+  std::function<bool(mcap14::string_view)> topicFilter;
   enum struct ReadOrder { FileOrder, LogTimeOrder, ReverseLogTimeOrder };
   /**
    * @brief Set the expected order that messages should be returned in.
@@ -295,7 +295,7 @@ public:
    *   returned, the data source is not considered open and McapReader is not
    *   usable until `open()` is called and a success response is returned.
    */
-  Status open(std::string_view filename);
+  Status open(mcap14::string_view filename);
   /**
    * @brief Opens an MCAP file for reading from a std::ifstream input file
    * stream.
@@ -388,15 +388,15 @@ public:
   /**
    * @brief Returns the parsed Header record, if it has been encountered.
    */
-  const std::optional<Header>& header() const;
+  const mcap14::optional<Header>& header() const;
   /**
    * @brief Returns the parsed Footer record, if it has been encountered.
    */
-  const std::optional<Footer>& footer() const;
+  const mcap14::optional<Footer>& footer() const;
   /**
    * @brief Returns the parsed Statistics record, if it has been encountered.
    */
-  const std::optional<Statistics>& statistics() const;
+  const mcap14::optional<Statistics>& statistics() const;
 
   /**
    * @brief Returns all of the parsed Channel records. Call `readSummary()`
@@ -472,7 +472,7 @@ public:
   /**
    * @brief Converts a compression string ("", "zstd", "lz4") to the Compression enum.
    */
-  static std::optional<Compression> ParseCompression(const std::string_view compression);
+  static mcap14::optional<Compression> ParseCompression(const mcap14::string_view compression);
 
 private:
   using ChunkInterval = internal::Interval<ByteOffset, ChunkIndex>;
@@ -482,9 +482,9 @@ private:
   std::FILE* file_ = nullptr;
   std::unique_ptr<FileReader> fileInput_;
   std::unique_ptr<FileStreamReader> fileStreamInput_;
-  std::optional<Header> header_;
-  std::optional<Footer> footer_;
-  std::optional<Statistics> statistics_;
+  mcap14::optional<Header> header_;
+  mcap14::optional<Footer> footer_;
+  mcap14::optional<Statistics> statistics_;
   std::vector<ChunkIndex> chunkIndexes_;
   internal::IntervalTree<ByteOffset, ChunkIndex> chunkRanges_;
   std::multimap<std::string, AttachmentIndex> attachmentIndexes_;
@@ -512,7 +512,7 @@ struct MCAP_PUBLIC RecordReader {
 
   void reset(IReadable& dataSource, ByteOffset startOffset, ByteOffset endOffset);
 
-  std::optional<Record> next();
+  mcap14::optional<Record> next();
 
   const Status& status() const;
 
@@ -563,9 +563,9 @@ private:
 struct MCAP_PUBLIC TypedRecordReader {
   std::function<void(const Header&, ByteOffset)> onHeader;
   std::function<void(const Footer&, ByteOffset)> onFooter;
-  std::function<void(const SchemaPtr, ByteOffset, std::optional<ByteOffset>)> onSchema;
-  std::function<void(const ChannelPtr, ByteOffset, std::optional<ByteOffset>)> onChannel;
-  std::function<void(const Message&, ByteOffset, std::optional<ByteOffset>)> onMessage;
+  std::function<void(const SchemaPtr, ByteOffset, mcap14::optional<ByteOffset>)> onSchema;
+  std::function<void(const ChannelPtr, ByteOffset, mcap14::optional<ByteOffset>)> onChannel;
+  std::function<void(const Message&, ByteOffset, mcap14::optional<ByteOffset>)> onMessage;
   std::function<void(const Chunk&, ByteOffset)> onChunk;
   std::function<void(const MessageIndex&, ByteOffset)> onMessageIndex;
   std::function<void(const ChunkIndex&, ByteOffset)> onChunkIndex;
@@ -576,7 +576,7 @@ struct MCAP_PUBLIC TypedRecordReader {
   std::function<void(const MetadataIndex&, ByteOffset)> onMetadataIndex;
   std::function<void(const SummaryOffset&, ByteOffset)> onSummaryOffset;
   std::function<void(const DataEnd&, ByteOffset)> onDataEnd;
-  std::function<void(const Record&, ByteOffset, std::optional<ByteOffset>)> onUnknownRecord;
+  std::function<void(const Record&, ByteOffset, mcap14::optional<ByteOffset>)> onUnknownRecord;
   std::function<void(ByteOffset)> onChunkEnd;
 
   TypedRecordReader(IReadable& dataSource, ByteOffset startOffset,
@@ -689,10 +689,10 @@ struct MCAP_PUBLIC LinearMessageView {
 
       LinearMessageView& view_;
 
-      std::optional<TypedRecordReader> recordReader_;
-      std::optional<IndexedMessageReader> indexedMessageReader_;
+      mcap14::optional<TypedRecordReader> recordReader_;
+      mcap14::optional<IndexedMessageReader> indexedMessageReader_;
       Message curMessage_;
-      std::optional<MessageView> curMessageView_;
+      mcap14::optional<MessageView> curMessageView_;
 
     private:
       void onMessage(const Message& message, RecordOffset offset);

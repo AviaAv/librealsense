@@ -2,7 +2,7 @@
 
 namespace mcap {
 
-constexpr std::string_view OpCodeString(OpCode opcode) {
+constexpr mcap14::string_view OpCodeString(OpCode opcode) {
   switch (opcode) {
     case OpCode::Header:
       return "Header";

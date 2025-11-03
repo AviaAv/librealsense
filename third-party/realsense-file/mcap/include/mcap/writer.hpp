@@ -104,7 +104,7 @@ struct MCAP_PUBLIC McapWriterOptions {
   bool noStatistics = false;
   bool noSummaryOffsets = false;
 
-  McapWriterOptions(const std::string_view _profile)
+  McapWriterOptions(const mcap14::string_view _profile)
       : profile(_profile) {}
 };
 
@@ -125,7 +125,7 @@ public:
    * @param data A pointer to the data to write.
    * @param size Size of the data in bytes.
    */
-  void write(const std::byte* data, uint64_t size);
+  void write(const mcap14::byte* data, uint64_t size);
   /**
    * @brief Called when the writer is finished writing data to the output MCAP
    * file.
@@ -153,7 +153,7 @@ public:
   virtual void flush() {}
 
 protected:
-  virtual void handleWrite(const std::byte* data, uint64_t size) = 0;
+  virtual void handleWrite(const mcap14::byte* data, uint64_t size) = 0;
 
 private:
   uint32_t crc_;
@@ -167,9 +167,9 @@ class MCAP_PUBLIC FileWriter final : public IWritable {
 public:
   ~FileWriter() override;
 
-  Status open(std::string_view filename);
+  Status open(mcap14::string_view filename);
 
-  void handleWrite(const std::byte* data, uint64_t size) override;
+  void handleWrite(const mcap14::byte* data, uint64_t size) override;
   void end() override;
   void flush() override;
   uint64_t size() const override;
@@ -187,7 +187,7 @@ class MCAP_PUBLIC StreamWriter final : public IWritable {
 public:
   StreamWriter(std::ostream& stream);
 
-  void handleWrite(const std::byte* data, uint64_t size) override;
+  void handleWrite(const mcap14::byte* data, uint64_t size) override;
   void end() override;
   void flush() override;
   uint64_t size() const override;
@@ -235,12 +235,12 @@ public:
   /**
    * @brief Returns a pointer to the uncompressed data.
    */
-  virtual const std::byte* data() const = 0;
+  virtual const mcap14::byte* data() const = 0;
   /**
    * @brief Returns a pointer to the compressed data. This will only be called
    * after `end()`.
    */
-  virtual const std::byte* compressedData() const = 0;
+  virtual const mcap14::byte* compressedData() const = 0;
 
 protected:
   virtual void handleClear() = 0;
@@ -252,17 +252,17 @@ protected:
  */
 class MCAP_PUBLIC BufferWriter final : public IChunkWriter {
 public:
-  void handleWrite(const std::byte* data, uint64_t size) override;
+  void handleWrite(const mcap14::byte* data, uint64_t size) override;
   void end() override;
   uint64_t size() const override;
   uint64_t compressedSize() const override;
   bool empty() const override;
   void handleClear() override;
-  const std::byte* data() const override;
-  const std::byte* compressedData() const override;
+  const mcap14::byte* data() const override;
+  const mcap14::byte* compressedData() const override;
 
 private:
-  std::vector<std::byte> buffer_;
+  std::vector<mcap14::byte> buffer_;
 };
 
 #ifndef MCAP_COMPRESSION_NO_LZ4
@@ -274,18 +274,18 @@ class MCAP_PUBLIC LZ4Writer final : public IChunkWriter {
 public:
   LZ4Writer(CompressionLevel compressionLevel, uint64_t chunkSize);
 
-  void handleWrite(const std::byte* data, uint64_t size) override;
+  void handleWrite(const mcap14::byte* data, uint64_t size) override;
   void end() override;
   uint64_t size() const override;
   uint64_t compressedSize() const override;
   bool empty() const override;
   void handleClear() override;
-  const std::byte* data() const override;
-  const std::byte* compressedData() const override;
+  const mcap14::byte* data() const override;
+  const mcap14::byte* compressedData() const override;
 
 private:
-  std::vector<std::byte> uncompressedBuffer_;
-  std::vector<std::byte> compressedBuffer_;
+  std::vector<mcap14::byte> uncompressedBuffer_;
+  std::vector<mcap14::byte> compressedBuffer_;
   CompressionLevel compressionLevel_;
 };
 #endif
@@ -300,18 +300,18 @@ public:
   ZStdWriter(CompressionLevel compressionLevel, uint64_t chunkSize);
   ~ZStdWriter() override;
 
-  void handleWrite(const std::byte* data, uint64_t size) override;
+  void handleWrite(const mcap14::byte* data, uint64_t size) override;
   void end() override;
   uint64_t size() const override;
   uint64_t compressedSize() const override;
   bool empty() const override;
   void handleClear() override;
-  const std::byte* data() const override;
-  const std::byte* compressedData() const override;
+  const mcap14::byte* data() const override;
+  const mcap14::byte* compressedData() const override;
 
 private:
-  std::vector<std::byte> uncompressedBuffer_;
-  std::vector<std::byte> compressedBuffer_;
+  std::vector<mcap14::byte> uncompressedBuffer_;
+  std::vector<mcap14::byte> compressedBuffer_;
   ZSTD_CCtx_s* zstdContext_ = nullptr;
 };
 #endif
@@ -333,7 +333,7 @@ public:
    * @param options Options for MCAP writing. `profile` is required.
    * @return A non-success status if the file could not be opened for writing.
    */
-  Status open(std::string_view filename, const McapWriterOptions& options);
+  Status open(mcap14::string_view filename, const McapWriterOptions& options);
 
   /**
    * @brief Open a new MCAP file for writing and write the header.
@@ -466,13 +466,13 @@ public:
   static uint64_t write(IWritable& output, const DataEnd& dataEnd);
   static uint64_t write(IWritable& output, const Record& record);
 
-  static void write(IWritable& output, const std::string_view str);
+  static void write(IWritable& output, const mcap14::string_view str);
   static void write(IWritable& output, const ByteArray bytes);
   static void write(IWritable& output, OpCode value);
   static void write(IWritable& output, uint16_t value);
   static void write(IWritable& output, uint32_t value);
   static void write(IWritable& output, uint64_t value);
-  static void write(IWritable& output, const std::byte* data, uint64_t size);
+  static void write(IWritable& output, const mcap14::byte* data, uint64_t size);
   static void write(IWritable& output, const KeyValueMap& map, uint32_t size = 0);
 
 private:
