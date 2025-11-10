@@ -1,21 +1,14 @@
 cmake_minimum_required(VERSION 3.5)
 project(ament_index_cpp)
 
-# Default to C++14
-if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
-endif()
-
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-std=c++14 -Wall -Wextra -Wpedantic)
-endif()
-
-option(
-  BUILD_SHARED_LIBS
-  "Global flag to cause add_library() to create shared libraries if on. \
-If set to true, this will cause all libraries to be built shared \
-unless the library was explicitly added as a static library."
-  ON)
+# # Default to C++14
+# if(NOT CMAKE_CXX_STANDARD)
+#   set(CMAKE_CXX_STANDARD 14)
+# endif()
+# 
+# if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+#   add_compile_options(-std=c++14 -Wall -Wextra -Wpedantic)
+# endif()
 
 add_library(${PROJECT_NAME}
   src/get_package_prefix.cpp
@@ -46,3 +39,4 @@ install(EXPORT export_${PROJECT_NAME}
   DESTINATION lib/cmake/${PROJECT_NAME}
   NAMESPACE ${PROJECT_NAME}::
   FILE ${PROJECT_NAME}Targets.cmake)
+include(config.cmake)

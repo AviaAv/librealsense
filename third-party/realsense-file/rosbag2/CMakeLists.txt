@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(rosbag2_standalone)
+project(rosbag2_independent)
 
 # Allow consumers to opt-in explicitly; default OFF to avoid configuration failures
 option(BUILD_ROSBAG2 "Build rosbag2 third-party components" OFF)
@@ -30,7 +30,7 @@ set(YAML_CPP_DISABLE_UNINSTALL ON CACHE BOOL "" FORCE)
 
 FetchContent_MakeAvailable(yaml-cpp)
 
-# Force SQLite to export all symbols on Windows so the .lib is generated
+# Force SQLite and libzstd to export all symbols on Windows so the .lib is generated
 # There's probably a better way to do it but it works for now - either have the folder on the repo, or pass the flag
 # if there's no better way, we can and should restore the old flag
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
@@ -42,12 +42,20 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(sqlite3)
 
+add_library(libzstd_shared SHARED zstd/zstd.c)
+target_include_directories(libzstd_shared PUBLIC 
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/zstd>
+    $<INSTALL_INTERFACE:include/zstd>
+)
+
+
 # Reset it so it doesn't affect other libraries
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS OFF)
 
+add_subdirectory(tinyxml2)
 
-add_library(tinyxml2 STATIC tinyxml2/tinyxml2.cpp)
-target_include_directories(tinyxml2 PUBLIC tinyxml2)
+#add_library(tinyxml2 STATIC tinyxml2/tinyxml2.cpp)
+#target_include_directories(tinyxml2 PUBLIC tinyxml2)
 
 set(CLASS_LOADER_IGNORE_AMENT TRUE CACHE BOOL "Do not use ament" FORCE) # for class_loader
 
@@ -57,6 +65,8 @@ add_subdirectory(pluginlib)
 add_subdirectory(rcpputils)
 add_subdirectory(rosbag2_storage)
 add_subdirectory(rosbag2_storage_default_plugins)
+add_subdirectory(rosbag2_cpp)
+add_subdirectory(rosbag2_compression)
 add_subdirectory(console_bridge)
 add_subdirectory(class_loader)
 add_subdirectory(ament_index_cpp)
@@ -72,9 +82,36 @@ target_link_libraries(rosbag2_independent INTERFACE
     SQLite::SQLite3           # Direct sqlite3 target
     pluginlib
     tinyxml2
+    libzstd_shared
     rcpputils
     rosbag2_storage
     rosbag2_storage_default_plugins
+    rosbag2_compression
+    rosbag2_cpp
     class_loader
     ament_index_cpp
+)
+
+include(config.cmake) # sets variables with values for header/source files and dirs
+
+install(TARGETS 
+    rosbag2_independent
+    rcutils
+    rosbag2_storage
+    rosbag2_storage_default_plugins
+    rosbag2_cpp
+    rosbag2_compression
+    rosbag2_compression_zstd
+    class_loader
+    ament_index_cpp
+    pluginlib
+    rcpputils
+    tinyxml2
+    libzstd_shared
+    yaml-cpp
+    SQLite3
+    EXPORT realsense2Targets
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )

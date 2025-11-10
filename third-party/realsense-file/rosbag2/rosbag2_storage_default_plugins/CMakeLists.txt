@@ -1,15 +1,15 @@
 cmake_minimum_required(VERSION 3.5)
 project(rosbag2_storage_default_plugins)
 
-# Default to C99
-if(NOT CMAKE_C_STANDARD)
-  set(CMAKE_C_STANDARD 99)
-endif()
-
-# Default to C++14
-if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
-endif()
+# # Default to C99
+# if(NOT CMAKE_C_STANDARD)
+#   set(CMAKE_C_STANDARD 99)
+# endif()
+# 
+# # Default to C++14
+# if(NOT CMAKE_CXX_STANDARD)
+#   set(CMAKE_CXX_STANDARD 14)
+# endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic -Werror)
@@ -19,9 +19,9 @@ if(WIN32)
   add_definitions(-DNOMINMAX)
 endif()
 
-find_package(rosbag2_storage QUIET)
-find_package(rcpputils QUIET)
-find_package(pluginlib QUIET)
+# find_package(rosbag2_storage QUIET)
+# find_package(rcpputils QUIET)
+# find_package(pluginlib QUIET)
 
 
 add_library(${PROJECT_NAME} SHARED
@@ -72,3 +72,5 @@ target_include_directories(${PROJECT_NAME}
 # install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
 #   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
 
+
+include(config.cmake)

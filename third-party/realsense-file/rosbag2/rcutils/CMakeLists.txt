@@ -2,14 +2,14 @@ cmake_minimum_required(VERSION 3.5)
 
 project(rcutils)
 
-# Default to C11
-if(NOT CMAKE_C_STANDARD)
-  set(CMAKE_C_STANDARD 11)
-endif()
-# Default to C++14
-if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
-endif()
+# # Default to C11
+# if(NOT CMAKE_C_STANDARD)
+#   set(CMAKE_C_STANDARD 11)
+# endif()
+# # Default to C++14
+# if(NOT CMAKE_CXX_STANDARD)
+#   set(CMAKE_CXX_STANDARD 14)
+# endif()
 
 include(CheckLibraryExists)
 include(GNUInstallDirs)
@@ -24,13 +24,13 @@ if(UNIX AND NOT APPLE)
   endif()
 endif()
 
-if(NOT WIN32)
-  # About -Wno-sign-conversion: With Clang, -Wconversion implies -Wsign-conversion. There are a number of
-  # implicit sign conversions in gtest.cc, see https://ci.ros2.org/job/ci_osx/9381/clang/.
-  # Hence disabling -Wsign-conversion for now until all those have eventually been fixed.
-  # (from https://github.com/ros2/rcutils/pull/263#issuecomment-663252537)
-  add_compile_options(-Wall -Wextra -Wconversion -Wno-sign-conversion -Wpedantic)
-endif()
+# if(NOT WIN32)
+#   # About -Wno-sign-conversion: With Clang, -Wconversion implies -Wsign-conversion. There are a number of
+#   # implicit sign conversions in gtest.cc, see https://ci.ros2.org/job/ci_osx/9381/clang/.
+#   # Hence disabling -Wsign-conversion for now until all those have eventually been fixed.
+#   # (from https://github.com/ros2/rcutils/pull/263#issuecomment-663252537)
+#   add_compile_options(-Wall -Wextra -Wconversion -Wno-sign-conversion -Wpedantic)
+# endif()
 
 if(WIN32)
   set(time_impl_c src/time_win32.c)
@@ -81,16 +81,12 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 # which is appropriate when building the dll but not consuming it.
 target_compile_definitions(${PROJECT_NAME} PRIVATE "RCUTILS_BUILDING_DLL")
 
-if(BUILD_TESTING AND NOT RCUTILS_DISABLE_FAULT_INJECTION)
-  target_compile_definitions(${PROJECT_NAME} PUBLIC RCUTILS_ENABLE_FAULT_INJECTION)
-endif()
-
 target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS})
 
-# Needed if pthread is used for thread local storage.
-if(IOS AND IOS_SDK_VERSION LESS 10.0)
-  target_link_libraries(${PROJECT_NAME} pthread)
-endif()
+# # Needed if pthread is used for thread local storage.
+# if(IOS AND IOS_SDK_VERSION LESS 10.0)
+#   target_link_libraries(${PROJECT_NAME} pthread)
+# endif()
 
 # Installation
 install(TARGETS ${PROJECT_NAME}
@@ -103,12 +99,12 @@ install(
   DIRECTORY include/
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-# Export targets for downstream projects
-install(EXPORT ${PROJECT_NAME}Targets
-  FILE ${PROJECT_NAME}Targets.cmake
-  NAMESPACE ${PROJECT_NAME}::
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
-
+# # Export targets for downstream projects
+# install(EXPORT ${PROJECT_NAME}Targets
+#   FILE ${PROJECT_NAME}Targets.cmake
+#   NAMESPACE ${PROJECT_NAME}::
+#   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+# 
 # Create config file
 # include(CMakePackageConfigHelpers)
 # configure_package_config_file(
@@ -120,3 +116,4 @@ install(EXPORT ${PROJECT_NAME}Targets
 # install(FILES
 #   ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
 #   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+include(config.cmake)

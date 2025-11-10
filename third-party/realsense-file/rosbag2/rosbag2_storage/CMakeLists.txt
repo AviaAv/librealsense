@@ -20,10 +20,10 @@ if(WIN32)
   add_definitions(-DNOMINMAX)
 endif()
 
-# Removed ament; use plain find_package for dependencies (they must be available or optional)
-find_package(pluginlib QUIET)
-find_package(rcpputils QUIET)
-#find_package(rcutils REQUIRED) # local project
+# # Removed ament; use plain find_package for dependencies (they must be available or optional)
+# find_package(pluginlib QUIET)
+# find_package(rcpputils QUIET)
+# #find_package(rcutils REQUIRED) # local project
 
 add_library(
   ${PROJECT_NAME}
@@ -86,3 +86,5 @@ install(DIRECTORY cmake DESTINATION share/${PROJECT_NAME})
 #   NO_CHECK_REQUIRED_COMPONENTS_MACRO)
 # install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
 #   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+
+include(config.cmake)
