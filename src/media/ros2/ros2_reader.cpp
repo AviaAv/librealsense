@@ -51,7 +51,7 @@ void ros2_reader::reset()
 void ros2_reader::seek_to_time( const nanoseconds & t )
 {
     if( _messages.empty() ) return;
-    auto target = t.count();
+    int64_t target = static_cast< int64_t >( t.count() );
     _cursor = 0;
     while( _cursor < _messages.size() && _messages[ _cursor ].time_stamp < target )
         ++_cursor;
