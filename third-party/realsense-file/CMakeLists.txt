@@ -39,6 +39,10 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
+    rosbag2_independent
+)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE
         $<$<BOOL:${USE_EXTERNAL_LZ4}>:lz4::lz4>
 )
 
