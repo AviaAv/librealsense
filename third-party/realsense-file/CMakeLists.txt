@@ -49,7 +49,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
-        yaml-cpp::yaml-cpp
+        yaml-cpp
         SQLite3
 )
 
@@ -60,7 +60,7 @@ set_target_properties (${PROJECT_NAME} PROPERTIES FOLDER Library)
 set(CMAKECONFIG_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/../cmake/realsense2")
 
 install(TARGETS ${PROJECT_NAME}
-    #yaml-cpp # for testing it compiles on GHA
+    yaml-cpp
     EXPORT realsense2Targets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}

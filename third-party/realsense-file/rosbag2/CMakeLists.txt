@@ -14,35 +14,6 @@ endif()
 
 set(CMAKE_CXX_STANDARD 14)
 
-# ---- FetchContent for direct library dependencies ----
-include(FetchContent)
-
-# yaml-cpp
-FetchContent_Declare(
-    yaml-cpp
-    GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
-    GIT_TAG a83cd31548b19d50f3f983b069dceb4f4d50756d  # need any commit/tag after tag 0.8.0 - we need YAML_CPP_DISABLE_UNINSTALL flag
-)
-# Disable yaml-cpp's uninstall target
-set(YAML_CPP_DISABLE_UNINSTALL ON CACHE BOOL "" FORCE)
-
-FetchContent_MakeAvailable(yaml-cpp)
-
-# Force SQLite to export all symbols on Windows so the .lib is generated
-# There's probably a better way to do it but it works for now - either have the folder on the repo, or pass the flag
-# if there's no better way, we can and should restore the old flag
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-
-FetchContent_Declare(
-    sqlite3
-    GIT_REPOSITORY https://github.com/sjinks/sqlite3-cmake
-    GIT_TAG v3.49.1
-)
-FetchContent_MakeAvailable(sqlite3)
-
-# Reset it so it doesn't affect other libraries
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS OFF)
-
 # -- zstd --
 file(GLOB_RECURSE ZSTD_SOURCES
     "${CMAKE_CURRENT_LIST_DIR}/zstd/zstd.c"
