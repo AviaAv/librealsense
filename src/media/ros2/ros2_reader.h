@@ -1,4 +1,5 @@
-// License: Apache 2.0. See LICENSE file in root directory.
+// License: Apache 2.0 See LICENSE file in root directory.
+// Copyright(c) 2025 RealSense, Inc. All Rights Reserved.
 #pragma once
 #include <core/serialization.h>
 #include <rosbag2_storage/storage_interfaces/read_only_interface.hpp>

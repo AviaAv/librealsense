@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 project(rosbag2_independent)
 
-# Allow consumers to opt-in explicitly; default OFF to avoid configuration failures
-option(BUILD_ROSBAG2 "Build rosbag2 third-party components" OFF)
 if(NOT BUILD_ROSBAG2)
     message(STATUS "rosbag2: BUILD_ROSBAG2=OFF - skipping build of rosbag2 third-party components")
     return()
@@ -23,7 +21,7 @@ include(FetchContent)
 FetchContent_Declare(
     yaml-cpp
     GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
-    GIT_TAG master  # using master for latest version, we can also pick a specific commit but we need one after version 0.8.0 - we need YAML_CPP_DISABLE_UNINSTALL flag
+    GIT_TAG a83cd31548b19d50f3f983b069dceb4f4d50756d  # need any commit/tag after tag 0.8.0 - we need YAML_CPP_DISABLE_UNINSTALL flag
 )
 # Disable yaml-cpp's uninstall target
 set(YAML_CPP_DISABLE_UNINSTALL ON CACHE BOOL "" FORCE)
@@ -95,7 +93,6 @@ target_link_libraries(rosbag2_independent INTERFACE
 include(config.cmake) # sets variables with values for header/source files and dirs
 
 install(TARGETS 
-    rosbag2_independent
     rcutils
     rosbag2_storage
     rosbag2_storage_default_plugins
@@ -114,4 +111,10 @@ install(TARGETS
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # to avoid sqlite3 warning
+)
+
+# Install INTERFACE library separately
+install(TARGETS rosbag2_independent
+    EXPORT realsense2Targets
 )
