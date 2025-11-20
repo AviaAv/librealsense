@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.10)
 
+if(WIN32)
+  set(time_impl_c time_win32.c)
+else()
+  set(time_impl_c time_unix.c)
+endif()
+
 set(HEADER_FILES_RCUTILS
     ${CMAKE_CURRENT_LIST_DIR}/include/rcutils/allocator.h
     ${CMAKE_CURRENT_LIST_DIR}/include/rcutils/cmdline_parser.h
@@ -62,9 +68,12 @@ set(SOURCE_FILES_RCUTILS
     ${CMAKE_CURRENT_LIST_DIR}/src/string_array.c
     ${CMAKE_CURRENT_LIST_DIR}/src/string_map.c
     ${CMAKE_CURRENT_LIST_DIR}/src/time.c
-    ${CMAKE_CURRENT_LIST_DIR}/src/time_unix.c
-    ${CMAKE_CURRENT_LIST_DIR}/src/time_win32.c
+    ${CMAKE_CURRENT_LIST_DIR}/src/${time_impl_c}
     ${CMAKE_CURRENT_LIST_DIR}/src/uint8_array.c
     ${CMAKE_CURRENT_LIST_DIR}/src/testing/fault_injection.c
 )
+
+message(STATUS "ROSBAG2_COMPILE_FLAGS before adding rcutils: ${ROSBAG2_COMPILE_FLAGS}")
+set(ROSBAG2_COMPILE_FLAGS "${ROSBAG2_COMPILE_FLAGS};RCUTILS_BUILDING_DLL")
+message(STATUS "ROSBAG2_COMPILE_FLAGS after adding rcutils: ${ROSBAG2_COMPILE_FLAGS}")
 

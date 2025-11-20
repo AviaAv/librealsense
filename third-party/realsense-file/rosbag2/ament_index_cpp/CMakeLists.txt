@@ -9,7 +9,8 @@ project(ament_index_cpp)
 # if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 #   add_compile_options(-std=c++14 -Wall -Wextra -Wpedantic)
 # endif()
-
+include(config.cmake)
+return()
 add_library(${PROJECT_NAME}
   src/get_package_prefix.cpp
   src/get_package_share_directory.cpp
@@ -39,4 +40,3 @@ install(EXPORT export_${PROJECT_NAME}
   DESTINATION lib/cmake/${PROJECT_NAME}
   NAMESPACE ${PROJECT_NAME}::
   FILE ${PROJECT_NAME}Targets.cmake)
-include(config.cmake)

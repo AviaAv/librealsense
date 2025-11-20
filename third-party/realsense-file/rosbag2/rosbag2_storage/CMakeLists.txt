@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 project(rosbag2_storage)
-
+message(STATUS "Configuring rosbag2_storage standalone build yo doug this is T-Bone speaking!")
 # Default to C99
 if(NOT CMAKE_C_STANDARD)
   set(CMAKE_C_STANDARD 99)

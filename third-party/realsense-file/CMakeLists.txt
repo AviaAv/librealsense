@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 project(realsense-file)
 
+set(ROSBAG2_COMPILE_FLAGS)
 include(config.cmake)
 
 FILE(GLOB_RECURSE AllSources
@@ -38,12 +39,18 @@ target_include_directories(${PROJECT_NAME} PRIVATE
         $<$<NOT:$<BOOL:${USE_EXTERNAL_LZ4}>>:${LZ4_INCLUDE_PATH}>
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    rosbag2_independent
+message(STATUS "ROSBAG2_COMPILE_FLAGS: ${ROSBAG2_COMPILE_FLAGS}")
+target_compile_definitions(${PROJECT_NAME} PUBLIC
+        ${ROSBAG2_COMPILE_FLAGS}
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
         $<$<BOOL:${USE_EXTERNAL_LZ4}>:lz4::lz4>
+)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC
+        yaml-cpp::yaml-cpp
+        SQLite3
 )
 
 #set_target_properties(${PROJECT_NAME} PROPERTIES VERSION "${LIBVERSION}" SOVERSION "${LIBSOVERSION}")
@@ -53,6 +60,7 @@ set_target_properties (${PROJECT_NAME} PROPERTIES FOLDER Library)
 set(CMAKECONFIG_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/../cmake/realsense2")
 
 install(TARGETS ${PROJECT_NAME}
+    yaml-cpp
     EXPORT realsense2Targets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
