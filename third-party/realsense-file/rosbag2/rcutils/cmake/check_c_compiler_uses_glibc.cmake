@@ -32,5 +32,5 @@ function(check_c_compiler_uses_glibc result_variable)
   ]====])
 
   check_c_source_compiles("${GLIBC_TEST_CODE}" ${result_variable})
-  set(${result_variable} ${result_variable} PARENT_SCOPE)
+  #set(${result_variable} ${result_variable} PARENT_SCOPE)
 endfunction()
