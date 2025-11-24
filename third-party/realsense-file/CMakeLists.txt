@@ -32,7 +32,11 @@ add_library(${PROJECT_NAME} STATIC
     ${SOURCE_FILES_COMPRESSION}
 )
 
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_11)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_14)
 
 target_include_directories(${PROJECT_NAME} PRIVATE
         ${ROSBAG_HEADER_DIRS}
