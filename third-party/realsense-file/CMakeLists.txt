@@ -47,6 +47,9 @@ message(STATUS "ROSBAG2_COMPILE_FLAGS: ${ROSBAG2_COMPILE_FLAGS}")
 target_compile_definitions(${PROJECT_NAME} PUBLIC
         ${ROSBAG2_COMPILE_FLAGS}
 )
+target_compile_options(${PROJECT_NAME} PRIVATE
+        -include cstdint -std=c++14
+)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
         $<$<BOOL:${USE_EXTERNAL_LZ4}>:lz4::lz4>
