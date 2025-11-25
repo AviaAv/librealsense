@@ -47,11 +47,16 @@ message(STATUS "ROSBAG2_COMPILE_FLAGS: ${ROSBAG2_COMPILE_FLAGS}")
 target_compile_definitions(${PROJECT_NAME} PUBLIC
         ${ROSBAG2_COMPILE_FLAGS}
 )
-target_compile_options(realsense-file PRIVATE
-  $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
-  $<$<COMPILE_LANGUAGE:CXX>:-include cstdint>
-  $<$<COMPILE_LANGUAGE:C>:-include stdint.h>
-)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 13.0)
+    target_compile_options(realsense-file PRIVATE
+      $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
+      $<$<COMPILE_LANGUAGE:CXX>:-include cstdint>
+      $<$<COMPILE_LANGUAGE:C>:-include stdint.h>
+    )
+  endif()
+endif()
+
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
         $<$<BOOL:${USE_EXTERNAL_LZ4}>:lz4::lz4>
