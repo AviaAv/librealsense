@@ -47,6 +47,11 @@ message(STATUS "ROSBAG2_COMPILE_FLAGS: ${ROSBAG2_COMPILE_FLAGS}")
 target_compile_definitions(${PROJECT_NAME} PUBLIC
         ${ROSBAG2_COMPILE_FLAGS}
 )
+target_compile_options(realsense-file PRIVATE
+  $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
+  $<$<COMPILE_LANGUAGE:CXX>:-include cstdint>
+  $<$<COMPILE_LANGUAGE:C>:-include stdint.h>
+)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
         $<$<BOOL:${USE_EXTERNAL_LZ4}>:lz4::lz4>
