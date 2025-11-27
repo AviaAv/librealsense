@@ -1,16 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
-project(rosbag2_independent)
 
 if(NOT BUILD_ROSBAG2)
     message(STATUS "rosbag2: BUILD_ROSBAG2=OFF - skipping build of rosbag2 third-party components")
     return()
 endif()
 
-# Prevent duplicate processing if this directory is added more than once
-if(TARGET rcutils OR TARGET rosbag2_independent)
-    message(STATUS "rosbag2: targets already defined - skipping duplicate inclusion")
-    return()
-endif()
 
 set(CMAKE_CXX_STANDARD 14)
 
@@ -42,6 +36,10 @@ include(rosbag2_compression/config.cmake)
 include(console_bridge/config.cmake)
 include(class_loader/config.cmake)
 include(ament_index_cpp/config.cmake)
+# Temporary workaround as we reach here twice for some reason...
+if(NOT TARGET SQLite3)
+    include(sqlite3/config.cmake)
+endif()
 
 include(config.cmake) # sets variables with values for header/source files and dirs
 
