@@ -3,6 +3,13 @@
 # License: Apache 2.0. See LICENSE file in root directory.
 # Copyright(c) 2021 RealSense, Inc. All Rights Reserved.
 
+print("Running this script in order to simply hold on the machine while manually working on it, if needed please ping")
+# set timer for 2 hrs
+import time
+time.sleep( 2 * 60 * 60 )
+exit(0)
+
+
 import sys, os, subprocess, re, platform, getopt, time
 
 # Add our py/ module directory so we can find our own libraries
