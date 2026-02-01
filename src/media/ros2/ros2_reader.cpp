@@ -96,7 +96,7 @@ namespace librealsense
     std::string ros2_reader::read_string(const std::shared_ptr<rosbag2_storage::SerializedBagMessage> msg)
     {
         std::string payload_str;
-        if (msg && msg->serialized_data && msg->serialized_data->buffer_length > 0)
+        if (msg && msg->serialized_data && msg->serialized_data->buffer && msg->serialized_data->buffer_length > 0)
         {
             payload_str = std::string(reinterpret_cast<const char*>(msg->serialized_data->buffer), msg->serialized_data->buffer_length);
         }
