@@ -520,8 +520,8 @@ namespace librealsense
                 rs2_metadata_type md_value;
                 convert(get_value(kv, md_name), md_value);
                 
-                auto size_of_enum = sizeof(rs2_frame_metadata_value);
-                auto size_of_data = sizeof(rs2_metadata_type);
+                uint32_t size_of_enum = sizeof(rs2_frame_metadata_value);
+                uint32_t size_of_data = sizeof(rs2_metadata_type);
                 if (total_md_size + size_of_enum + size_of_data > additional_data.metadata_blob.size())
                 {
                     continue; //stop adding metadata to frame
@@ -535,7 +535,7 @@ namespace librealsense
                 std::memcpy(additional_data.metadata_blob.data() + total_md_size, &md_value, size_of_data);
                 total_md_size += size_of_data;
             }
-            catch (const std::exception& e)
+            catch (const std::exception&)
             {
                 // Metadata not found or conversion failed, skip
                 continue;
