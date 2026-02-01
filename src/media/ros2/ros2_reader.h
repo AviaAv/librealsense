@@ -34,7 +34,7 @@ namespace librealsense
     class ros2_reader : public reader
     {
     public:
-        ros2_reader(const std::string& file_path, const std::shared_ptr<context>& ctx);
+        ros2_reader(const std::string& file_path, const std::shared_ptr<context> ctx);
         virtual ~ros2_reader() = default;
 
         // Interface Implementations
@@ -58,14 +58,14 @@ namespace librealsense
         static std::vector<std::string> split_string(const std::string& s, char delimiter);
         static std::string get_value(const std::map<std::string, std::string>& kv, const std::string& key);
         std::vector<std::string> filter_topics_by_regex(const std::regex& re) const;
-        static std::map< std::string, std::string > parse_msg_payload(const std::shared_ptr<rosbag2_storage::SerializedBagMessage>& msg);
-        static void register_camera_infos(std::shared_ptr<info_container>& infos, const std::map<std::string, std::string>& kv);
-        static std::string read_string(const std::shared_ptr<rosbag2_storage::SerializedBagMessage>& msg);
+        static std::map< std::string, std::string > parse_msg_payload(const std::shared_ptr<rosbag2_storage::SerializedBagMessage> msg);
+        static void register_camera_infos(std::shared_ptr<info_container> infos, const std::map<std::string, std::string>& kv);
+        static std::string read_string(const std::shared_ptr<rosbag2_storage::SerializedBagMessage> msg);
         nanoseconds get_file_duration();
 
         uint32_t read_file_version();
         bool try_read_stream_extrinsic(const stream_identifier& stream_id, uint32_t& group_id, rs2_extrinsics& extrinsic);
-        std::shared_ptr<recommended_proccesing_blocks_snapshot> update_proccesing_blocks(uint32_t sensor_index, std::shared_ptr<options_container>& sensor_options);
+        std::shared_ptr<recommended_proccesing_blocks_snapshot> update_proccesing_blocks(uint32_t sensor_index, std::shared_ptr<options_container> sensor_options);
         void add_sensor_extension(snapshot_collection& sensor_extensions, const std::string& sensor_name);
        
         static bool is_depth_sensor(const std::string& sensor_name);
@@ -88,7 +88,6 @@ namespace librealsense
         std::shared_ptr<stream_profile_interface> read_next_stream_profile();
         std::set<uint32_t> read_sensor_indices(uint32_t device_index) const;
         std::map<uint32_t, stream_profiles> read_all_stream_profiles(uint32_t device_index);
-        std::map<uint32_t, std::shared_ptr<info_container>> read_all_sensor_info(std::set<uint32_t> sensor_indices); // TODO remove
 
         // Stream profile parsing helpers
         rs2_motion_device_intrinsic parse_motion_intrinsics(const std::map<std::string, std::string>& kv) const;
@@ -102,15 +101,15 @@ namespace librealsense
         void read_frame_metadata(frame_additional_data& additional_data);
         void setup_frame(frame_interface* frame_ptr, const stream_identifier& sid) const;
         
-        std::pair<rs2_option, std::shared_ptr<librealsense::option>> create_option(const std::shared_ptr<rosbag2_storage::SerializedBagMessage>& msg);
-        std::shared_ptr< serialized_data > read_frame_data(const std::shared_ptr<rosbag2_storage::SerializedBagMessage>& msg, const stream_identifier& sid);
+        std::pair<rs2_option, std::shared_ptr<librealsense::option>> create_option(const std::shared_ptr<rosbag2_storage::SerializedBagMessage> msg);
+        std::shared_ptr< serialized_data > read_frame_data(const std::shared_ptr<rosbag2_storage::SerializedBagMessage> msg, const stream_identifier& sid);
 
         std::shared_ptr< processing_block_interface >
-            create_processing_block(const std::shared_ptr<rosbag2_storage::SerializedBagMessage>& msg,
+            create_processing_block(const std::shared_ptr<rosbag2_storage::SerializedBagMessage> msg,
                                  bool & depth_to_disparity,
                                  std::shared_ptr< options_interface > options );
 
-        notification create_notification(const std::shared_ptr<rosbag2_storage::SerializedBagMessage>& msg) const;
+        notification create_notification(const std::shared_ptr<rosbag2_storage::SerializedBagMessage> msg) const;
         std::shared_ptr<options_container> read_sensor_options(device_serializer::sensor_identifier sensor_id);
 
         std::shared_ptr< rosbag2_storage::storage_interfaces::ReadWriteInterface > _storage;

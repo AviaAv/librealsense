@@ -56,7 +56,7 @@ namespace librealsense
         return out;
     }
 
-    std::map< std::string, std::string > ros2_reader::parse_msg_payload(const std::shared_ptr<rosbag2_storage::SerializedBagMessage>& msg)
+    std::map< std::string, std::string > ros2_reader::parse_msg_payload(const std::shared_ptr<rosbag2_storage::SerializedBagMessage> msg)
     {
         auto payload_str = read_string(msg);
         std::map< std::string, std::string > kv_map;
@@ -74,7 +74,7 @@ namespace librealsense
         return kv_map;
     }
 
-    void ros2_reader::register_camera_infos(std::shared_ptr<info_container>& infos, const std::map<std::string, std::string>& kv)
+    void ros2_reader::register_camera_infos(std::shared_ptr<info_container> infos, const std::map<std::string, std::string>& kv)
     {
         for (const auto& it : kv)
         {
@@ -93,7 +93,7 @@ namespace librealsense
         }
     }
 
-    std::string ros2_reader::read_string(const std::shared_ptr<rosbag2_storage::SerializedBagMessage>& msg)
+    std::string ros2_reader::read_string(const std::shared_ptr<rosbag2_storage::SerializedBagMessage> msg)
     {
         std::string payload_str;
         if (msg && msg->serialized_data && msg->serialized_data->buffer_length > 0)
@@ -103,7 +103,7 @@ namespace librealsense
         return payload_str;
     }
 
-    ros2_reader::ros2_reader(const std::string& file_path, const std::shared_ptr<context>& ctx) :
+    ros2_reader::ros2_reader(const std::string& file_path, const std::shared_ptr<context> ctx) :
         m_metadata_parser_map(md_constant_parser::create_metadata_parser_map()),
         m_total_duration(0),
         m_file_path(file_path + ".db3"),
@@ -360,7 +360,7 @@ namespace librealsense
         return sensor_to_streams;
     }
 
-    std::pair<rs2_option, std::shared_ptr<librealsense::option>> ros2_reader::create_option(const std::shared_ptr<rosbag2_storage::SerializedBagMessage>& msg)
+    std::pair<rs2_option, std::shared_ptr<librealsense::option>> ros2_reader::create_option(const std::shared_ptr<rosbag2_storage::SerializedBagMessage> msg)
     {
         if (!msg->serialized_data || !msg->serialized_data->buffer)
         {
@@ -378,7 +378,7 @@ namespace librealsense
         return std::make_pair(id, std::make_shared<const_value_option>(description, value));
     }
 
-    notification ros2_reader::create_notification(const std::shared_ptr<rosbag2_storage::SerializedBagMessage>& msg) const
+    notification ros2_reader::create_notification(const std::shared_ptr<rosbag2_storage::SerializedBagMessage> msg) const
     {
         auto kv = parse_msg_payload(msg);
         rs2_notification_category category;
@@ -417,7 +417,7 @@ namespace librealsense
         return sensor_options;
     }
 
-    std::shared_ptr< serialized_data > ros2_reader::read_frame_data(const std::shared_ptr<rosbag2_storage::SerializedBagMessage>& msg, const stream_identifier& stream_id)
+    std::shared_ptr< serialized_data > ros2_reader::read_frame_data(const std::shared_ptr<rosbag2_storage::SerializedBagMessage> msg, const stream_identifier& stream_id)
     {
         nanoseconds ts(msg->time_stamp);
 
@@ -459,7 +459,7 @@ namespace librealsense
         return data;
     }
 
-    std::shared_ptr<processing_block_interface> ros2_reader::create_processing_block(const std::shared_ptr<rosbag2_storage::SerializedBagMessage>& msg, bool& depth_to_disparity, std::shared_ptr<options_interface> options)
+    std::shared_ptr<processing_block_interface> ros2_reader::create_processing_block(const std::shared_ptr<rosbag2_storage::SerializedBagMessage> msg, bool& depth_to_disparity, std::shared_ptr<options_interface> options)
     {
         std::string name = read_string(msg);
         if (name == "Disparity Filter")
@@ -507,8 +507,8 @@ namespace librealsense
         additional_data.timestamp = std::stod(get_value(kv, TIMESTAMP_MD_STR));
 
         // Read all RS2_FRAME_METADATA values and populate metadata_blob
-        uint8_t* blob_ptr = additional_data.metadata_blob.data();
-        size_t blob_offset = 0;
+        
+        uint32_t total_md_size = 0;
 
         for (int i = 0; i < RS2_FRAME_METADATA_COUNT; i++)
         {
@@ -520,18 +520,29 @@ namespace librealsense
                 rs2_metadata_type md_value;
                 convert(get_value(kv, md_name), md_value);
                 
+                auto size_of_enum = sizeof(rs2_frame_metadata_value);
+                auto size_of_data = sizeof(rs2_metadata_type);
+                if (total_md_size + size_of_enum + size_of_data > additional_data.metadata_blob.size())
+                {
+                    continue; //stop adding metadata to frame
+                }
+
                 // Write the type
-                std::memcpy(blob_ptr + blob_offset, &md_type, sizeof(rs2_frame_metadata_value));
-                blob_offset += sizeof(rs2_frame_metadata_value);
+                std::memcpy(additional_data.metadata_blob.data() + total_md_size, &md_type, size_of_enum);
+                total_md_size += size_of_enum;
                 
                 // Write the value
-                std::memcpy(blob_ptr + blob_offset, &md_value, sizeof(rs2_metadata_type));
-                blob_offset += sizeof(rs2_metadata_type);
+                std::memcpy(additional_data.metadata_blob.data() + total_md_size, &md_value, size_of_data);
+                total_md_size += size_of_data;
             }
-            catch (...) {}
+            catch (const std::exception& e)
+            {
+                // Metadata not found or conversion failed, skip
+                continue;
+            }
         }
 
-        additional_data.metadata_size = static_cast<uint32_t>(blob_offset);
+        additional_data.metadata_size = total_md_size;
     }
 
     void ros2_reader::setup_frame(frame_interface* frame_ptr, const stream_identifier& sid) const
@@ -610,7 +621,7 @@ namespace librealsense
         return true;
     }
 
-    std::shared_ptr<recommended_proccesing_blocks_snapshot> ros2_reader::update_proccesing_blocks(uint32_t sensor_index, std::shared_ptr<options_container>& sensor_options)
+    std::shared_ptr<recommended_proccesing_blocks_snapshot> ros2_reader::update_proccesing_blocks(uint32_t sensor_index, std::shared_ptr<options_container> sensor_options)
     {
         auto options_snapshot = sensor_options;
         if (options_snapshot == nullptr)
