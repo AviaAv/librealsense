@@ -551,23 +551,27 @@ namespace librealsense
         {
             for (auto& stream_profile : sensor_snap.get_stream_profiles())
             {
-                if (stream_profile->get_stream_type() == sid.stream_type &&
-                    stream_profile->get_stream_index() == sid.stream_index)
-                {
-                    frame_ptr->set_stream(stream_profile);
+                if (stream_profile->get_stream_type() != sid.stream_type ||
+                    stream_profile->get_stream_index() != sid.stream_index)
+                    continue;
 
-                    // For video frames, set dimensions
-                    if (auto vsp = std::dynamic_pointer_cast<video_stream_profile>(stream_profile))
-                    {
-                        auto video_frame_ptr = static_cast<video_frame*>(frame_ptr);
-                        int width = vsp->get_width();
-                        int height = vsp->get_height();
-                        int bpp = get_image_bpp(vsp->get_format());
-                        int stride = width * bpp / 8;
-                        video_frame_ptr->assign(width, height, stride, bpp);
-                    }
-                    return;
-                }
+                frame_ptr->set_stream(stream_profile);
+
+                // For video frames, set dimensions
+                auto vsp = std::dynamic_pointer_cast<video_stream_profile>(stream_profile);
+                if (!vsp) 
+                    return; // Not a video stream
+
+                auto video_frame_ptr = dynamic_cast<video_frame*>(frame_ptr);
+                if (!video_frame_ptr) 
+                    throw std::runtime_error("Profile is video stream but frame is not video frame"); // Not supposed to happen
+
+                int width = vsp->get_width();
+                int height = vsp->get_height();
+                int bpp = get_image_bpp(vsp->get_format());
+                int stride = width * bpp / 8;
+                video_frame_ptr->assign(width, height, stride, bpp);
+                return;
             }
         }
         
