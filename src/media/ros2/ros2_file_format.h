@@ -4,6 +4,8 @@
 #pragma once
 #include <string>
 #include <chrono>
+#include <memory>
+#include <rcutils/types/uint8_array.h>
 #include "librealsense2/rs.h"
 #include "sensor_msgs/image_encodings.h"
 #include "ros2-msg-types/sensor_msgs/msg/Imu.h"
@@ -285,4 +287,29 @@ namespace librealsense
         void deserialize(eprosima::fastcdr::Cdr& cdr) { cdr >> value; }
         static size_t getCdrSerializedSize(const cdr_uint32&, size_t = 0) { return sizeof(uint32_t); }
     };
+
+    // Lazily allocate or grow a reusable rcutils uint8 array.
+    // Used by both ros2_writer (CDR / compression buffers) and ros2_reader (decompression buffer)
+    // to avoid per-message malloc on the hot path.
+    inline std::shared_ptr<rcutils_uint8_array_t>& ensure_buffer_capacity(
+        std::shared_ptr<rcutils_uint8_array_t>& buf, size_t size)
+    {
+        if (!buf)
+        {
+            buf = std::shared_ptr<rcutils_uint8_array_t>(new rcutils_uint8_array_t(),
+                [](rcutils_uint8_array_t* arr) {
+                    (void)rcutils_uint8_array_fini(arr);
+                    delete arr;
+                });
+            rcutils_allocator_t alloc = rcutils_get_default_allocator();
+            if (rcutils_uint8_array_init(buf.get(), size, &alloc) != RCUTILS_RET_OK)
+                throw std::runtime_error("Failed to initialize rcutils uint8 array");
+        }
+        else if (buf->buffer_capacity < size)
+        {
+            if (rcutils_uint8_array_resize(buf.get(), size) != RCUTILS_RET_OK)
+                throw std::runtime_error("Failed to resize rcutils uint8 array");
+        }
+        return buf;
+    }
 }
