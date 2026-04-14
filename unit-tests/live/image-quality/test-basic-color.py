@@ -80,8 +80,11 @@ def run_test(resolution, fps):
         log.i(f"Configuration {resolution[0]}x{resolution[1]}@{fps}fps is not supported by the device")
         return
     pipeline_profile = pipeline.start(cfg)
-    for i in range(60):  # skip initial frames
-        pipeline.wait_for_frames()
+    # SHORT-CIRCUIT: force failure to test PNG save location (REMOVE BEFORE MERGE)
+    save_failure_snapshot(__file__, pipeline)
+    pipeline.stop()
+    test.fail()
+    return
     last_frame_bgr = None
     last_roi = None
     try:
