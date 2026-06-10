@@ -394,6 +394,15 @@ def pytest_configure(config):
     except Exception as e:
         log.warning(f"Failed to query devices during configuration: {e}")
 
+    # Parallel: the controller has powered all ports; now RELEASE the hub so workers
+    # can transiently connect to port-toggle their own device per module (the Acroname
+    # is single-owner — the controller can't keep holding it).
+    if parallel and not worker and devices.hub and devices.hub.is_connected():
+        try:
+            devices.hub.disconnect()
+        except Exception as e:
+            log.warning(f"hub disconnect (release for workers) failed: {e}")
+
 
 def pytest_generate_tests(metafunc):
     """Expand @device_each into one test instance per matching device."""
@@ -568,8 +577,12 @@ def module_device_setup(request, _test_device_serial, __pytest_repeat_step_numbe
         ]
         log.info(f"Configuration: {', '.join(names)}")
         try:
-            # Worker has no hub (controller owns it + powered the ports) → bind only.
-            devices.enable_only(serial_number, recycle=not is_xdist_worker(request.config))
+            # Recycle every module for a guaranteed-clean device (no state leak).
+            if is_xdist_worker(request.config):
+                for sn in serial_number:
+                    devices.recycle_device(sn)
+            else:
+                devices.enable_only(serial_number, recycle=True)
             log.debug(f"All {len(serial_number)} devices enabled and ready")
         except Exception as e:
             pytest.fail(f"Failed to enable devices: {e}")
@@ -604,12 +617,21 @@ def module_device_setup(request, _test_device_serial, __pytest_repeat_step_numbe
         yield serial_number
         return
 
-    # Worker runs hub-less (controller owns the single-connection hub and already
-    # powered every port), so a worker never recycles — it just binds to its device.
-    recycle = not no_reset and not is_xdist_worker(request.config)
+    # Recycle the device every module for a guaranteed-clean state — no device state
+    # (HDR, options, presets) can leak across modules, exactly as if the device were
+    # physically disconnected/reconnected. Both serial and worker do a hub port
+    # power-cycle (DC/RC of that device's port only); hw_reset is the fallback solely
+    # when there is no hub or no hub port (e.g. a DDS device).
+    recycle = not no_reset
     try:
-        log.debug(f"{'Recycling' if recycle else 'Enabling'} device via hub...")
-        devices.enable_only([serial_number], recycle=recycle)
+        if is_xdist_worker(request.config) and recycle:
+            # Worker: power-cycle its own hub port (real DC-RC, clean state). Transient
+            # hub connect serializes naturally; hw_reset only if no hub/port (DDS).
+            log.debug("Recycling device via own hub port...")
+            devices.recycle_device(serial_number)
+        else:
+            log.debug(f"{'Recycling' if recycle else 'Enabling'} device...")
+            devices.enable_only([serial_number], recycle=recycle)
         module_obj._module_last_serial = serial_number
         log.debug(f"Device enabled and ready")
     except Exception as e:

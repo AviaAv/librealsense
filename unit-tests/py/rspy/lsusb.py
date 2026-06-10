@@ -12,15 +12,28 @@ from rspy import log
 import re, subprocess
 
 
+def _run( args, retries = 3, timeout = 5 ):
+    """Run lsusb, retrying on transient timeouts. Concurrent USB topology churn
+    (parallel hub port toggles) can make lsusb momentarily slow, so a single hard
+    deadline is too brittle under load."""
+    for attempt in range( retries ):
+        try:
+            return subprocess.run( ['lsusb'] + args,
+                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                   universal_newlines=True, timeout=timeout )
+        except subprocess.TimeoutExpired:
+            if attempt + 1 == retries:
+                raise
+            log.d( f'lsusb {args} timed out (attempt {attempt+1}/{retries}); retrying' )
+
+
 def itree():
     """
     Yields all device interfaces from 'lsusb -t' in tuples:
         (bus, device, interface, ports)
     All integers, and ports is a list of port numbers.
     """
-    df = subprocess.run( ['lsusb', '-t'],
-                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                         universal_newlines=True, timeout=2 )
+    df = _run( ['-t'] )
     bus = None
     ports = []
     for i in df.stdout.split('\n'):
@@ -70,9 +83,7 @@ def tree():
 def devices_by_vendor( vid ):
     """
     """
-    df = subprocess.run( ['lsusb', '-d', vid + ':'],
-                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                         universal_newlines=True, timeout=2 )
+    df = _run( ['-d', vid + ':'] )
     for i in df.stdout.split('\n'):
         if i:
             match = re.search( r'^Bus (\d+) Device (\d+):', i )

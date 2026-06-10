@@ -59,7 +59,6 @@ hub = None
 _hub_attempted = False
 _hub_disabled = False
 
-
 def disable_hub():
     """Run this process hub-less: init_hub() becomes a no-op and hub stays None.
 
@@ -757,6 +756,82 @@ def _wait_for( serial_numbers, timeout = MAX_ENUMERATION_TIME ):
         timeout -= 1
         time.sleep( 1 )
         did_some_waiting = True
+
+def recycle_device( serial, timeout = MAX_ENUMERATION_TIME, connect_retries = 30 ):
+    """Power-cycle ONE device's own hub port (real DC-RC), leaving every other
+    device powered. Unlike enable_only(), this does NOT isolate (disable others),
+    so it is safe while other devices run concurrently (xdist workers).
+
+    Uses the process-owned hub when held, else connects transiently. hw_reset is
+    used ONLY when there is no hub or the device has no hub port (e.g. a DDS device).
+    """
+    dev = get( serial )
+    # Use the already-owned hub if this process holds it (serial/controller); otherwise
+    # connect transiently (xdist worker). The Acroname is single-owner, so the transient
+    # connect() retries until the current holder releases — contention serializes
+    # concurrent worker recycles naturally, no external lock.
+    owned = hub if ( hub and hub.is_connected() ) else None
+    h = owned
+    if h is None:
+        for _ in range( connect_retries ):
+            try:
+                h = device_hub.create()
+                if h is None:
+                    break  # no hub on this host
+                if not h.is_connected():
+                    h.connect()
+                break
+            except Exception as e:
+                log.d( f'waiting for hub to recycle {serial}: {e}' )
+                try:
+                    if h: h.disconnect()
+                except Exception:
+                    pass
+                h = None
+                time.sleep( 2 )
+    try:
+        port = h.get_port_by_location( dev.location ) if ( h and dev and dev.location ) else None
+        if h is None or port is None:
+            # no hub / no hub port (DDS) → in-band reset is the only option
+            if not hw_reset( [serial], timeout = timeout ):
+                raise RuntimeError( f'hw_reset failed for: {serial}' )
+            return
+        log.d( f'hub port {port}: disable+enable (recycle {serial})' )
+        h.disable_ports( [port], sleep_on_change = 5 )
+        h.enable_ports( [port] )
+    finally:
+        if h is not owned:  # leave a process-owned hub connected; only drop transient ones
+            try:
+                if h: h.disconnect()
+            except Exception:
+                pass
+    if not _wait_for( [serial], timeout = timeout ):
+        raise TimeoutError( f'device {serial} did not re-enumerate within {timeout}s after port recycle' )
+    # enabled() is driven by the change-callback flag, which can lead a freshly-created
+    # rs.context() during the USB re-enumeration storm of concurrent worker port toggles.
+    # Tests query a NEW, module-scoped context, so a transient miss here errors the whole
+    # module (and --retries can't recreate a module fixture). Confirm the device is actually
+    # visible in a fresh context before returning.
+    _wait_visible_in_context( serial, timeout = timeout )
+
+
+def _wait_visible_in_context( serial, timeout = MAX_ENUMERATION_TIME ):
+    """Wait until `serial` shows up in a freshly-created rs.context() -- matching what the
+    test fixtures query (device-mask 0xfe, Intel-only). Closes the gap between the
+    callback-driven enabled() flag and live enumeration after a port recycle under load."""
+    while True:
+        ctx = rs.context( { "device-mask": 0xfe } )
+        sns = { d.get_info( rs.camera_info.serial_number ) for d in ctx.query_devices()
+                if d.supports( rs.camera_info.serial_number ) }
+        ctx = None
+        if serial in sns:
+            time.sleep( 1 )  # let the device finish powering up
+            return
+        if timeout <= 0:
+            raise TimeoutError( f'device {serial} not visible in a fresh context after recycle' )
+        timeout -= 1
+        time.sleep( 1 )
+
 
 def hw_reset( serial_numbers, timeout = MAX_ENUMERATION_TIME ):
     """
