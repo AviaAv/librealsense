@@ -7,6 +7,7 @@ import logging
 from typing import List
 
 from rspy import devices
+from rspy.pytest.parallel import serial_param
 
 log = logging.getLogger('librealsense')
 
@@ -260,7 +261,10 @@ def resolve_device_each_serials(metafunc):
         metafunc.fixturenames.append('_test_device_serial')
         # scope="module" groups tests in the same module that share a device serial,
         # so module_device_setup / test_context / test_device set up once per device.
-        metafunc.parametrize("_test_device_serial", all_serials, ids=ids, scope="module")
+        # serial_param pins each real serial to an xdist_group (parallel phase only),
+        # so loadgroup keeps one camera's tests on a single worker.
+        argvalues = [serial_param(metafunc.config, sn) for sn in all_serials]
+        metafunc.parametrize("_test_device_serial", argvalues, ids=ids, scope="module")
 
 
 def find_matching_devices_multi(device_markers, cli_includes=None, cli_excludes=None):

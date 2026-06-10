@@ -7,7 +7,7 @@ import pyrsutils as rsutils
 import logging
 log = logging.getLogger(__name__)
 
-pytestmark = [pytest.mark.device_each("D400*")]
+pytestmark = [pytest.mark.device_each("D400*"), pytest.mark.parallel_safe]
 
 # List of SKUs that support emitter frequency from FW 5.14.0.0 onwards
 SUPPORTED_SKUS = ["D455", "D457"]

@@ -7,7 +7,7 @@ from pytest_check import check
 import logging
 log = logging.getLogger(__name__)
 
-pytestmark = [pytest.mark.device("D400*")]
+pytestmark = [pytest.mark.device("D400*"), pytest.mark.parallel_safe]
 
 
 @pytest.fixture(autouse=True)

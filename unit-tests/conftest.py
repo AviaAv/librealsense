@@ -68,6 +68,7 @@ from rspy.pytest.device_helpers import (
 )
 from rspy.pytest.collection import filter_and_sort_items
 from rspy.pytest.plugins import check_required_plugins
+from rspy.pytest.parallel import register_marker as register_parallel_marker, is_xdist_worker, xdist_active
 
 log = logging.getLogger('librealsense')
 
@@ -324,6 +325,7 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "dds: test requires a DDS-enabled build (selected by --tag dds / -m dds)"
     )
+    register_parallel_marker(config)
 
     # Configure standard logging with format matching legacy rspy.log output
     configure_logging(config, _debug_requested)
@@ -343,8 +345,31 @@ def pytest_configure(config):
         print(f"-I- Build directory: {repo.build}")
     print(f"-I- {'=' * 80}")
 
-    # Create hub after logging is configured so discovery prints are visible
-    devices.init_hub()
+    # Hub ownership under xdist: the Acroname BrainStem accepts only ONE process
+    # connection. The controller owns the hub; xdist workers run hub-less (the
+    # controller has already powered every port for the parallel phase). Without
+    # this, each worker's init_hub() races to connect and fails (result=25).
+    worker = is_xdist_worker(config)
+    parallel = xdist_active(config)
+    if worker:
+        # The Acroname BrainStem accepts only ONE process connection, so a worker
+        # must never connect the hub. It runs hub-less and enumerates the cameras
+        # the controller has powered, via its own hub-less query() below (full
+        # enumeration window — see devices.query / _hub_disabled).
+        devices.disable_hub()
+    else:
+        # Create hub after logging is configured so discovery prints are visible.
+        devices.init_hub()
+        if parallel and devices.hub:
+            # Parallel: power ALL ports once WITHOUT query()'s recycle (disable+enable)
+            # churn. The hub-less workers enumerate concurrently, and a mid-enumeration
+            # port disable would yield an empty list → spurious SKIP sentinels.
+            try:
+                if not devices.hub.is_connected():
+                    devices.hub.connect()
+                devices.hub.enable_ports()
+            except Exception as e:
+                log.warning(f"parallel port power-up failed: {e}")
 
     # Echo CLI device filters once (' '.join handles both repeated-flag and space-separated forms)
     exclude_list = config.getoption("--exclude-device", default=[])
@@ -354,12 +379,22 @@ def pytest_configure(config):
     if include_list:
         print(f"-D- including only devices: {' '.join(include_list)}")
 
-    # Query devices early for test parametrization
+    # Query devices early for test parametrization. Both controller and workers
+    # query: the controller (with the hub) powers the ports; each hub-less worker
+    # enumerates the same powered cameras. Deterministic by_spec ordering keeps the
+    # collected test set identical across processes (no xdist collection mismatch).
     try:
         hub_reset = config.getoption("--hub-reset", default=False)
         enable_dds = 'dds' in context_list
-        devices.query(hub_reset=hub_reset, disable_dds=not enable_dds)
-        devices.map_unknown_ports()
+        # In parallel, ports were pre-powered above; skip the disruptive recycle so
+        # workers can enumerate undisturbed. Workers are hub-less (recycle is a no-op).
+        devices.query(hub_reset=hub_reset, disable_dds=not enable_dds, recycle_ports=not parallel)
+        # map_unknown_ports() calls hub.disable_ports() to leave a clean state for the
+        # serial path. In the parallel phase the controller runs no tests — it only
+        # powers ports for the hub-less workers — so mapping here would power the
+        # cameras off before the workers enumerate them. Skip it when parallel.
+        if not worker and not parallel:
+            devices.map_unknown_ports()
     except Exception as e:
         log.warning(f"Failed to query devices during configuration: {e}")
 
@@ -537,7 +572,8 @@ def module_device_setup(request, _test_device_serial, __pytest_repeat_step_numbe
         ]
         log.info(f"Configuration: {', '.join(names)}")
         try:
-            devices.enable_only(serial_number, recycle=True)
+            # Worker has no hub (controller owns it + powered the ports) → bind only.
+            devices.enable_only(serial_number, recycle=not is_xdist_worker(request.config))
             log.debug(f"All {len(serial_number)} devices enabled and ready")
         except Exception as e:
             pytest.fail(f"Failed to enable devices: {e}")
@@ -572,7 +608,9 @@ def module_device_setup(request, _test_device_serial, __pytest_repeat_step_numbe
         yield serial_number
         return
 
-    recycle = not no_reset
+    # Worker runs hub-less (controller owns the single-connection hub and already
+    # powered every port), so a worker never recycles — it just binds to its device.
+    recycle = not no_reset and not is_xdist_worker(request.config)
     try:
         log.debug(f"{'Recycling' if recycle else 'Enabling'} device via hub...")
         devices.enable_only([serial_number], recycle=recycle)

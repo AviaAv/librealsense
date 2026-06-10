@@ -14,6 +14,7 @@ log = logging.getLogger(__name__)
 # This test monitors firmware error notifications during streaming to ensure hardware stability
 
 pytestmark = [
+    pytest.mark.parallel_safe,
     pytest.mark.device_each("D400*"),
     pytest.mark.device_each("D500*"),
     pytest.mark.context("nightly"),

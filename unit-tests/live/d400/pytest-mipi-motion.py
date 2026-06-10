@@ -10,6 +10,7 @@ log = logging.getLogger(__name__)
 import time
 
 pytestmark = [
+    pytest.mark.parallel_safe,
     pytest.mark.device_each("D457"),
     pytest.mark.skipif(platform.machine() != "aarch64", reason="Jetson only"),
     pytest.mark.flaky(retries=3),

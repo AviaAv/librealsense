@@ -14,6 +14,7 @@ from hdr_helper import HDR_CONFIGURATIONS, MANUAL_HDR_CONFIG_1
 log = logging.getLogger(__name__)
 
 pytestmark = [
+    pytest.mark.parallel_safe,
     pytest.mark.device_each("D455"),
     pytest.mark.device_each("D457"),
     pytest.mark.context("nightly"),

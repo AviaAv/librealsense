@@ -57,6 +57,19 @@ except ModuleNotFoundError:
 
 hub = None
 _hub_attempted = False
+_hub_disabled = False
+
+
+def disable_hub():
+    """Run this process hub-less: init_hub() becomes a no-op and hub stays None.
+
+    Used by xdist workers — the Acroname BrainStem accepts only one process
+    connection, so only the controller owns the hub. Must be called before the
+    first init_hub()/query().
+    """
+    global _hub_disabled
+    _hub_disabled = True
+
 
 def init_hub():
     """Create the hub instance. Call after logging is configured so discovery prints are visible."""
@@ -64,6 +77,10 @@ def init_hub():
     if _hub_attempted:
         return
     _hub_attempted = True
+    if _hub_disabled:
+        log.d( 'hub disabled for this process; running hub-less' )
+        hub = None
+        return
     hub = device_hub.create()
     if pyrs_dir in sys.path:
         sys.path.remove( pyrs_dir )
@@ -293,9 +310,24 @@ def query( monitor_changes=True, hub_reset=False, recycle_ports=True, disable_dd
 
     log.debug_indent()
 
-    # Wait for devices appearing to enumerate
-    wait_time = MAX_ENUMERATION_TIME if hub else 1 # When no hub connected we can assume the device is connected and powered
-    time.sleep( wait_time )
+    # Wait for devices appearing to enumerate.
+    if _hub_disabled and not hub:
+        # Hub-less xdist worker: the controller already powered the ports, so the
+        # cameras enumerate within a few seconds — poll until the count is stable
+        # (handles staggered enumeration, e.g. the high-current D585S) rather than
+        # sleeping the full window. Caps at MAX_ENUMERATION_TIME.
+        deadline = time.time() + MAX_ENUMERATION_TIME
+        prev = -1
+        while time.time() < deadline:
+            n = len( list( _context.query_devices() ) )
+            if n > 0 and n == prev:
+                break
+            prev = n
+            time.sleep( 1 )
+    else:
+        # No hub: device already connected/powered, 1s is enough. With a hub the
+        # ports were just (re)enabled, so wait the full enumeration window.
+        time.sleep( MAX_ENUMERATION_TIME if hub else 1 )
 
     d555_found = False
     try:
@@ -433,13 +465,17 @@ def by_spec( spec, ignored_products ):
     :param ignored_products: List of products we want to ignore. e.g. ['D455', 'D457', etc.]
     :return: A set of device serial-numbers
     """
+    # sorted() makes discovery order deterministic: by_product_line/by_name return a
+    # set, whose string-iteration order varies per process (hash seed). Under xdist,
+    # separate worker processes would otherwise resolve a single-spec device("D400*")
+    # to a different "first match" each, producing mismatched collections and an abort.
     if spec.endswith( '*' ):
-        for sn in by_product_line( spec[:-1], ignored_products ):
+        for sn in sorted( by_product_line( spec[:-1], ignored_products ) ):
             yield sn
     elif get( spec ):
         yield spec   # the device serial number
     else:
-        for sn in by_name( spec, ignored_products ):
+        for sn in sorted( by_name( spec, ignored_products ) ):
             yield sn
 
 

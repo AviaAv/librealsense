@@ -15,6 +15,7 @@ import time
 log = logging.getLogger(__name__)
 
 pytestmark = [
+    pytest.mark.parallel_safe,
     pytest.mark.device("D400*"),
     pytest.mark.context("nightly"),
 ]

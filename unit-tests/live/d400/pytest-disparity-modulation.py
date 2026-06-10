@@ -8,7 +8,7 @@ import pyrealsense2 as rs
 import logging
 log = logging.getLogger(__name__)
 
-pytestmark = [pytest.mark.device("D400*")]
+pytestmark = [pytest.mark.device("D400*"), pytest.mark.parallel_safe]
 
 
 def _test_amp_factor(am_device, input_factor_values: list):

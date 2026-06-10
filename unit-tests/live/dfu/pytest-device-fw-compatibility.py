@@ -11,7 +11,7 @@ from rspy import libci
 
 log = logging.getLogger(__name__)
 
-pytestmark = [pytest.mark.device("D400*")]
+pytestmark = [pytest.mark.device("D400*"), pytest.mark.parallel_safe]
 
 fw_dir = os.path.join( libci.home, 'data/FW', '' )
 d400_fw_min_version_1 = 'Signed_Image_UVC_5_8_15_0.bin'

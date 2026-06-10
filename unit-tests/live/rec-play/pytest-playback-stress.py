@@ -12,6 +12,7 @@ import logging
 log = logging.getLogger(__name__)
 
 pytestmark = [
+    pytest.mark.parallel_safe,
     pytest.mark.timeout(1500),
     pytest.mark.context("weekly"),
 ]

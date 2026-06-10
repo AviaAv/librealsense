@@ -11,6 +11,7 @@ from rspy.timer import Timer
 log = logging.getLogger(__name__)
 
 pytestmark = [
+    pytest.mark.parallel_safe,
     pytest.mark.device("D400*"),
     pytest.mark.device_each("D555"),
     pytest.mark.device_type_exclude("GMSL"), # Y16 is not streamed with metadata over GMSL causing all frames to drop

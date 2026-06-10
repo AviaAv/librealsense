@@ -10,6 +10,7 @@ import hdr_helper
 log = logging.getLogger(__name__)
 
 pytestmark = [
+    pytest.mark.parallel_safe,
     pytest.mark.device_each("D455"),
     pytest.mark.device_each("D457"),
 ]
