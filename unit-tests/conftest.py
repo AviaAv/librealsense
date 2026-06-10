@@ -568,7 +568,8 @@ def module_device_setup(request, _test_device_serial, __pytest_repeat_step_numbe
         ]
         log.info(f"Configuration: {', '.join(names)}")
         try:
-            devices.enable_only(serial_number, recycle=True)
+            # Worker has no hub (controller owns it + powered the ports) → bind only.
+            devices.enable_only(serial_number, recycle=not is_xdist_worker(request.config))
             log.debug(f"All {len(serial_number)} devices enabled and ready")
         except Exception as e:
             pytest.fail(f"Failed to enable devices: {e}")
@@ -603,11 +604,9 @@ def module_device_setup(request, _test_device_serial, __pytest_repeat_step_numbe
         yield serial_number
         return
 
-    # Recycle per module for a clean device state (same as the serial path). On a
-    # hub-less xdist worker this is an in-band hw_reset (no hub needed) rather than a
-    # hub port power-cycle — enough to clear leaked state (e.g. HDR left enabled by a
-    # prior module), which bind-only workers would otherwise inherit and fail on.
-    recycle = not no_reset
+    # Worker runs hub-less (controller owns the single-connection hub and already
+    # powered every port), so a worker never recycles — it just binds to its device.
+    recycle = not no_reset and not is_xdist_worker(request.config)
     try:
         log.debug(f"{'Recycling' if recycle else 'Enabling'} device via hub...")
         devices.enable_only([serial_number], recycle=recycle)
