@@ -14,7 +14,6 @@ import pyrealsense2 as rs
 log = logging.getLogger(__name__)
 
 pytestmark = [
-    pytest.mark.parallel_safe,
     pytest.mark.device_each("D500*"),
     pytest.mark.device_exclude("D555"),
     pytest.mark.context("nightly"),
