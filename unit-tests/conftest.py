@@ -346,17 +346,13 @@ def pytest_configure(config):
     print(f"-I- {'=' * 80}")
 
     # Hub ownership under xdist: the Acroname BrainStem accepts only ONE process
-    # connection. The controller owns the hub; xdist workers run hub-less (the
-    # controller has already powered every port for the parallel phase). Without
+    # connection. The controller owns the hub and powers every port; xdist workers
+    # run hub-less and enumerate those powered cameras with their own query(). Without
     # this, each worker's init_hub() races to connect and fails (result=25).
     worker = is_xdist_worker(config)
     parallel = xdist_active(config)
     if worker:
-        # The Acroname BrainStem accepts only ONE process connection, so a worker
-        # must never connect the hub. It runs hub-less and enumerates the cameras
-        # the controller has powered, via its own hub-less query() below (full
-        # enumeration window — see devices.query / _hub_disabled).
-        devices.disable_hub()
+        devices.disable_hub()  # worker runs hub-less; controller owns the hub
     else:
         # Create hub after logging is configured so discovery prints are visible.
         devices.init_hub()
@@ -367,7 +363,7 @@ def pytest_configure(config):
             try:
                 if not devices.hub.is_connected():
                     devices.hub.connect()
-                devices.hub.enable_ports()
+                devices.enable_all()
             except Exception as e:
                 log.warning(f"parallel port power-up failed: {e}")
 

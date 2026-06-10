@@ -311,16 +311,18 @@ def query( monitor_changes=True, hub_reset=False, recycle_ports=True, disable_dd
     log.debug_indent()
 
     # Wait for devices appearing to enumerate.
-    if _hub_disabled and not hub:
-        # Hub-less xdist worker: the controller already powered the ports, so the
-        # cameras enumerate within a few seconds — poll until the count is stable
-        # (handles staggered enumeration, e.g. the high-current D585S) rather than
-        # sleeping the full window. Caps at MAX_ENUMERATION_TIME.
+    if _hub_disabled:
+        # Hub-less xdist worker (init_hub left hub=None): the controller already
+        # powered the ports, so the cameras enumerate within a few seconds — poll
+        # until the count is stable (handles staggered enumeration, e.g. the
+        # high-current D585S) rather than sleeping the full window. Caps at
+        # MAX_ENUMERATION_TIME. Check-then-sleep so an already-stable count returns
+        # without a trailing 1s wait.
         deadline = time.time() + MAX_ENUMERATION_TIME
         prev = -1
-        while time.time() < deadline:
+        while True:
             n = len( list( _context.query_devices() ) )
-            if n > 0 and n == prev:
+            if (n > 0 and n == prev) or time.time() >= deadline:
                 break
             prev = n
             time.sleep( 1 )

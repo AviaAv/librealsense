@@ -12,10 +12,10 @@ before. Two phases (sequenced as two pytest invocations):
     serial   :  pytest -p no:xdist -m "not parallel_safe"
     parallel :  pytest -n <N> --dist loadgroup -m parallel_safe
 
-In the parallel phase, ``assign_xdist_groups`` stamps each parallel_safe device
-test with an ``xdist_group`` keyed on its device serial, so loadgroup keeps all
-of one camera's tests on a single worker (preserving per-device serial order)
-while different cameras run on different workers.
+In the parallel phase, ``serial_param`` stamps each parallel_safe device test with
+an ``xdist_group`` keyed on its device serial, so loadgroup keeps all of one
+camera's tests on a single worker (preserving per-device serial order) while
+different cameras run on different workers.
 
 pytest-xdist is treated as OPTIONAL, not a required plugin: when it is absent or
 the run is not using workers (no ``-n``), every hook here degrades to a no-op
@@ -61,26 +61,9 @@ def xdist_active(config):
     resolve directly — so the parametrize value shape is unchanged outside a real
     parallel run.
     """
-    # Real xdist injects workerinput as a dict on the worker; check the type so a
-    # MagicMock config (unit tests) doesn't false-positive via auto-created attributes.
-    if isinstance(getattr(config, "workerinput", None), dict):
-        return True
-    return bool(config.getoption("numprocesses", 0))
-
-
-def resolve_num_workers(num_devices, cap=None):
-    """Workers for the parallel phase: min(devices, physical cores), capped.
-
-    Device count is normally well under core count, so this is effectively one
-    worker per camera with a safety ceiling that protects low-core machines from
-    oversubscription. ``cap`` is the optional --max-device-workers override.
-    """
-    import os
-    cores = os.cpu_count() or 1
-    n = min(num_devices, cores)
-    if cap:
-        n = min(n, cap)
-    return max(1, n)
+    # Worker (workerinput dict) or controller (-n/numprocesses set). is_xdist_worker
+    # also guards against a MagicMock config (unit tests) false-positiving.
+    return is_xdist_worker(config) or bool(config.getoption("numprocesses", 0))
 
 
 def serial_param(config, serial):
