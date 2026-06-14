@@ -722,3 +722,40 @@ jobs:
         cmake .. -A x64 -DBUILD_SHARED_LIBS=true -DBUILD_EXAMPLES=false -DBUILD_TOOLS=true -DBUILD_UNIT_TESTS=false -DCHECK_FOR_UPDATES=false -DBUILD_WITH_DDS=false -DBUILD_ROSBAG2=OFF
         cmake --build . --config ${{env.LRS_RUN_CONFIG}} -- -m
 
+  #--------------------------------------------------------------------------------
+  # RSDSO-21591: build with rosbag2 (default ON) on Ubuntu 25.04 (GCC 14) and
+  # Ubuntu 26.04 - the platforms where the rosbag2/zstd 'implicit declaration of
+  # function qsort_r' error was reported. GitHub does not host 25.04/26.04 runner
+  # images, so the build runs inside the matching Ubuntu container.
+  U25_U26_Rosbag2:
+    runs-on: ubuntu-latest
+    container: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: ubuntu:25.04
+            name: U25
+          - image: ubuntu:26.04
+            name: U26
+    name: ${{ matrix.name }}_Rosbag2
+    timeout-minutes: 60
+    steps:
+    # git must exist before checkout; the base Ubuntu image ships without it.
+    - name: Install toolchain & deps
+      shell: bash
+      run: |
+        apt-get update
+        DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+          build-essential cmake git ca-certificates pkg-config libusb-1.0-0-dev libudev-dev
+        gcc --version
+
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #v6.0.2
+
+    - name: Build
+      shell: bash
+      run: |
+        mkdir build && cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.LRS_RUN_CONFIG}} -DBUILD_SHARED_LIBS=true -DBUILD_EXAMPLES=false -DBUILD_GRAPHICAL_EXAMPLES=false -DBUILD_TOOLS=false -DBUILD_UNIT_TESTS=false -DCHECK_FOR_UPDATES=false -DBUILD_WITH_DDS=false
+        cmake --build . -- -j4
+
