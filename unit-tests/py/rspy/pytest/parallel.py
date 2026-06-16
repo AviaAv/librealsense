@@ -5,17 +5,22 @@
 
 Design: docs/superpowers/specs/2026-06-09-parallel-device-tests-design.md
 
-Default behavior is unchanged. A test runs in parallel only when explicitly
-tagged ``@pytest.mark.parallel_safe``; untagged tests run serially exactly as
-before. Two phases (sequenced as two pytest invocations):
+Default behavior is unchanged. Everything runs under a SINGLE pytest call:
 
-    serial   :  pytest -p no:xdist -m "not parallel_safe"
-    parallel :  pytest -n <N> --dist loadgroup -m parallel_safe
+    pytest -n <N> --dist loadgroup
 
-In the parallel phase, ``serial_param`` stamps each parallel_safe device test with
-an ``xdist_group`` keyed on its device serial, so loadgroup keeps all of one
-camera's tests on a single worker (preserving per-device serial order) while
-different cameras run on different workers.
+``serial_param`` stamps each device test with an ``xdist_group`` so loadgroup
+decides placement:
+
+  - ``parallel_safe`` test → group keyed on its device serial. All of one camera's
+    tests stay on a single worker (per-device serial order preserved), while
+    different cameras run on different workers → parallel across devices.
+  - every other (exclusive) test → one shared ``SERIAL_GROUP``. loadgroup pins the
+    whole group to a single worker, so exclusive tests run one-at-a-time, never
+    concurrently with each other.
+
+No ``-m`` filter and no second invocation: parallel and serial tests run together
+in one pass.
 
 pytest-xdist is treated as OPTIONAL, not a required plugin: when it is absent or
 the run is not using workers (no ``-n``), every hook here degrades to a no-op
@@ -28,6 +33,12 @@ import logging
 log = logging.getLogger(__name__)
 
 PARALLEL_SAFE_MARKER = "parallel_safe"
+
+# Shared loadgroup for every non-parallel_safe test. loadgroup keeps a whole group
+# on one worker, so all exclusive tests are serialized onto a single worker (never
+# run concurrently with each other) while parallel_safe tests spread per-device.
+# Prefixed with "__" so it can never collide with a real device serial.
+SERIAL_GROUP = "__serial__"
 
 
 def register_marker(config):
@@ -66,12 +77,18 @@ def xdist_active(config):
     return is_xdist_worker(config) or bool(config.getoption("numprocesses", 0))
 
 
-def serial_param(config, serial):
-    """Wrap a device-serial parametrize value so loadgroup pins it to one worker.
+def serial_param(config, serial, parallel_safe):
+    """Wrap a device-serial parametrize value with the loadgroup it belongs to.
 
-    Attaches ``@pytest.mark.xdist_group(serial)`` when xdist is active and the value
-    is a real serial (not a __SKIP__/__MISSING__ sentinel or a multi-device list).
-    Returns the bare value otherwise.
+    Attaches ``@pytest.mark.xdist_group(...)`` when xdist is active and the value is a
+    real serial (not a __SKIP__/__MISSING__ sentinel or a multi-device list):
+
+      - parallel_safe test → group = the device serial → loadgroup keeps one camera's
+        tests on a single worker, different cameras on different workers (parallel).
+      - other test        → group = SERIAL_GROUP → all exclusive tests share one
+        worker and run one-at-a-time (serial).
+
+    Returns the bare value otherwise (no xdist → plain serial run, unchanged shape).
 
     Must be applied at parametrize time (pytest_generate_tests), NOT in a later
     pytest_collection_modifyitems hook: xdist derives the loadgroup ``@<group>``
@@ -82,5 +99,6 @@ def serial_param(config, serial):
     if (xdist_active(config) and isinstance(serial, str)
             and serial and not serial.startswith("__")):
         import pytest
-        return pytest.param(serial, marks=pytest.mark.xdist_group(serial))
+        group = serial if parallel_safe else SERIAL_GROUP
+        return pytest.param(serial, marks=pytest.mark.xdist_group(group))
     return serial
