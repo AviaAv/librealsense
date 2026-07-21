@@ -78,6 +78,18 @@ else()
     endif()
 endif()
 
+# The bundled FastCDR/FastDDS (+foonathan_memory, TinyXML2) are statically linked
+# into librealsense2.so and, on Linux, their eprosima symbols export with default
+# visibility. Loaded next to a different FastCDR (ROS 2 Jazzy ships v2, we bundle v1)
+# the linker interposes our calls onto the foreign copy -> CDR version mismatch ->
+# crash. Localize the bundled symbols so our code always binds to its own copy.
+# Windows already restricts exports via src/realsense.def.
+if(BUILD_SHARED_LIBS AND (BUILD_WITH_DDS OR BUILD_ROSBAG2) AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(_lrs_vscript "${CMAKE_CURRENT_SOURCE_DIR}/CMake/hide-vendored.map")
+    set_property(TARGET ${LRS_TARGET} APPEND_STRING PROPERTY LINK_FLAGS " -Wl,--version-script=${_lrs_vscript}")
+    set_property(TARGET ${LRS_TARGET} APPEND PROPERTY LINK_DEPENDS ${_lrs_vscript})
+endif()
+
 # configure the project according to OS specific requirments
 # macro definition located at "CMake/<OS>_config.cmake"
 os_target_config()
