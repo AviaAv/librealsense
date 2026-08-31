@@ -42,6 +42,7 @@ VIEWER_TEST( "controls", "options_filter" )
         }
 
         // case-insensitive substring match: non-matching control disappears, matching stays
+        controls_filter_reset const reset{ sub };
         test.set_controls_filter( model, sub, filter );
         IM_CHECK( test.wait_until( 10, 0.3f, [&] { return ! test.control_visible( model, sub, other ); } ) );
         IM_CHECK( test.control_visible( model, sub, options[0] ) );
