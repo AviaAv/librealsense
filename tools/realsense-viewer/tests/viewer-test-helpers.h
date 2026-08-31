@@ -129,6 +129,9 @@ public:
     void set_controls_filter( rs2::device_model & model,
                               std::shared_ptr< rs2::subdevice_model > sub,
                               const std::string & text );
+    // Click the button beside the box that clears the search
+    void click_controls_filter_clear( rs2::device_model & model,
+                                      std::shared_ptr< rs2::subdevice_model > sub );
     // Options whose control widgets are currently rendered inside the Controls section
     // (single gather pass; requires the sensor panel and Controls section to be expanded)
     std::vector< rs2_option > controls_options( rs2::device_model & model,
@@ -138,6 +141,22 @@ public:
     // Whether an option's control is currently rendered inside the Controls section
     bool control_visible( rs2::device_model & model,
                           std::shared_ptr< rs2::subdevice_model > sub, rs2_option option );
+    // Whether an option's widget is currently rendered under one post-processing filter
+    bool post_processing_option_visible( rs2::device_model & model,
+                                         std::shared_ptr< rs2::subdevice_model > sub,
+                                         std::shared_ptr< rs2::processing_block_model > pb,
+                                         rs2_option option );
+    // Whether the node at the end of this path is rendered, each element seeding the next - so a
+    // heading with nothing under it, or a control inside a section, is one call either way
+    bool node_shown( rs2::device_model & model,
+                     std::shared_ptr< rs2::subdevice_model > sub,
+                     std::vector< std::string > const & path );
+    // The tree labels the viewer draws, for building those paths
+    std::string controls_label( rs2::device_model & model,
+                                std::shared_ptr< rs2::subdevice_model > sub );
+    std::string post_processing_label( rs2::device_model & model );
+    std::string embedded_filters_label( rs2::device_model & model );
+    std::string filter_label( rs2::device_model & model, std::string const & name );
 
     // Open a combo dropdown by ID and select the named item
     void select_combo_item( ImGuiID combo_id, const std::string & item );
@@ -193,8 +212,6 @@ public:
 private:
     std::string sensor_label( rs2::device_model & model,
                               std::shared_ptr< rs2::subdevice_model > sub );
-    std::string controls_label( rs2::device_model & model,
-                                std::shared_ptr< rs2::subdevice_model > sub );
     ImGuiID sensor_id_seed( rs2::device_model & model,
                             std::shared_ptr< rs2::subdevice_model > sub );
     ImGuiID controls_id_seed( rs2::device_model & model,

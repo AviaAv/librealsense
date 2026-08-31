@@ -221,9 +221,58 @@ void viewer_test::set_controls_filter( rs2::device_model & model,
                                        const std::string & text )
 {
     imgui->SetRef( "Control Panel" );
-    imgui->ItemInput( ImHashStr( "##options_filter", 0, controls_id_seed( model, sub ) ) );
+    // the box sits at the sensor level, above the Controls section, so it covers every group
+    imgui->ItemInput( ImHashStr( "##options_filter", 0, sensor_id_seed( model, sub ) ) );
     imgui->KeyCharsReplaceEnter( text.c_str() );
     imgui->SleepNoSkip( 0.3f, 0.1f );
+}
+
+void viewer_test::click_controls_filter_clear( rs2::device_model & model,
+                                               std::shared_ptr< rs2::subdevice_model > sub )
+{
+    imgui->SetRef( "Control Panel" );
+    std::string label = rsutils::string::from()
+        << rs2::textual_icons::times_circle << "##clear_options_filter,"
+        << sub->s->get_info( RS2_CAMERA_INFO_NAME ) << "," << model.id;
+    imgui->ItemClick( ImHashStr( label.c_str(), 0, sensor_id_seed( model, sub ) ) );
+    imgui->SleepNoSkip( 0.3f, 0.1f );
+}
+
+std::string viewer_test::post_processing_label( rs2::device_model & model )
+{
+    return rsutils::string::from() << "Post-Processing##" << model.id;
+}
+
+std::string viewer_test::embedded_filters_label( rs2::device_model & model )
+{
+    return rsutils::string::from() << "Embedded-Filters##" << model.id;
+}
+
+std::string viewer_test::filter_label( rs2::device_model & model, std::string const & name )
+{
+    return rsutils::string::from() << name << "##" << model.id;
+}
+
+bool viewer_test::node_shown( rs2::device_model & model,
+                              std::shared_ptr< rs2::subdevice_model > sub,
+                              std::vector< std::string > const & path )
+{
+    imgui->SetRef( "Control Panel" );
+    ImGuiID seed = sensor_id_seed( model, sub );
+    for( size_t i = 0; i + 1 < path.size(); ++i )
+        seed = ImHashStr( path[i].c_str(), 0, seed );
+    return imgui->ItemExists( ImHashStr( path.back().c_str(), 0, seed ) );
+}
+
+bool viewer_test::post_processing_option_visible( rs2::device_model & model,
+                                                 std::shared_ptr< rs2::subdevice_model > sub,
+                                                 std::shared_ptr< rs2::processing_block_model > pb,
+                                                 rs2_option option )
+{
+    auto * opt = pb->get_option_model( option );
+    return opt && node_shown( model, sub, { post_processing_label( model ),
+                                            filter_label( model, pb->get_name() ),
+                                            opt->is_checkbox() ? opt->label : opt->id } );
 }
 
 std::vector< rs2_option > viewer_test::controls_options( rs2::device_model & model,
