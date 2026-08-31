@@ -45,8 +45,6 @@ namespace rs2
         }
         bool is_enabled() const { return _enabled; }
 
-        bool _is_visible = true;
-
         // Optional predicate; null means always available.
         // When it returns false the enable toggle is grayed out in the UI.
         // Set by the owner after construction for filters with runtime constraints
