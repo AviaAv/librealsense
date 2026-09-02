@@ -22,7 +22,8 @@ if(BUILD_GRAPHICAL_EXAMPLES)
     ${COMMON_SRC}
     realsense-viewer.cpp
     ${IMGUI_SOURCES}
-    ../../common/realsense-ui-advanced-mode.h
+    ../../common/advanced-mode-model.h
+    ../../common/advanced-mode-controls.h
     ../../common/rendering.h
     ../../common/model-views.h
     ../../common/model-views.cpp

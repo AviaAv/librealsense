@@ -26,7 +26,6 @@
 #include "processing-block-model.h"
 #include "embedded-filter-model.h"
 
-#include "realsense-ui-advanced-mode.h"
 #include "fw-update-helper.h"
 #include "updates-model.h"
 #include "calibration-model.h"

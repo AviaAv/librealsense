@@ -8,6 +8,7 @@
 #endif
 
 #include "viewer.h"
+#include <rsutils/string/string-utilities.h>
 #include "os.h"
 
 #include "udev-rules.h"

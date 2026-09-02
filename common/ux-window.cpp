@@ -7,6 +7,7 @@
 #include <glad/glad.h>
 #include <rs-config.h>
 #include "ux-window.h"
+#include <rsutils/string/string-utilities.h>
 
 #include <imgui.h>
 #include <implot.h>

@@ -2,6 +2,7 @@
 // Copyright(c) 2022 RealSense, Inc. All Rights Reserved.
 
 #include "option-model.h"
+#include <rsutils/string/string-utilities.h>
 #include <realsense_imgui.h>
 #include <librealsense2/rs_advanced_mode.hpp>
 #include <imgui.h>

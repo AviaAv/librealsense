@@ -33,7 +33,7 @@ if(BUILD_GRAPHICAL_EXAMPLES)
         depth-quality-model.h
         depth-quality-model.cpp
         depth-metrics.h
-        ../../common/realsense-ui-advanced-mode.h
+        ../../common/advanced-mode-model.h
         ${IMGUI_SOURCES}
         ../../third-party/glad/glad.c
         ../../third-party/tinyfiledialogs/tinyfiledialogs.c

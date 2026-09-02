@@ -23,7 +23,6 @@
 #include "objects-in-frame.h"
 #include "processing-block-model.h"
 
-#include "realsense-ui-advanced-mode.h"
 #include "fw-update-helper.h"
 #include "updates-model.h"
 #include "calibration-model.h"

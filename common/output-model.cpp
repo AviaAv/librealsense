@@ -3,6 +3,7 @@
 
 #include <glad/glad.h>
 #include "output-model.h"
+#include <rsutils/string/string-utilities.h>
 #include <rs-config.h>
 #include "ux-window.h"
 #include "device-model.h"

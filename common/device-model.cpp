@@ -18,11 +18,13 @@
 #include "os.h"
 #include <rsutils/os/os.h>
 #include "control-section.h"
+#include "advanced-mode-controls.h"
 #include "viewer.h"
 #include "on-chip-calib.h"
 #include "d500-on-chip-calib.h"
 #include "subdevice-model.h"
 #include "device-model.h"
+#include <rsutils/string/string-utilities.h>
 
 using namespace rs400;
 using rsutils::json;

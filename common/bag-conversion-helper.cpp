@@ -2,6 +2,7 @@
 // Copyright(c) 2026 RealSense, Inc. All Rights Reserved.
 
 #include "bag-conversion-helper.h"
+#include <rsutils/string/string-utilities.h>
 #include "viewer.h"
 #include "ux-window.h"
 #include "os.h"

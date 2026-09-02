@@ -2,6 +2,9 @@
 /* Copyright(c) 2024 RealSense, Inc. All Rights Reserved. */
 #pragma once
 
+// Size of the char buffers behind the text-edit boxes that stand in for sliders
+#define TEXT_BUFF_SIZE 1024
+
 #include "imgui.h"
 #include "imgui_internal.h"
 #include <functional>
