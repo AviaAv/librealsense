@@ -67,18 +67,21 @@ bool* draw_edit_button(const char* id, T val, std::string*& val_str)
     return &edit_mode[id];
 }
 
+// One slider for every advanced-mode field. A whole-number field gets the same integer widget
+// an integer option gets; the rest get the float one. Both share the text-edit box beside them,
+// and the range check that lets you type into a control firmware has pinned to a single value.
 template<class T, class S>
-inline void slider_int(std::string& error_message, const char* id, T* val, S T::* field, bool& to_set)
+inline void slider(std::string& error_message, const char* id, T* val, S T::* field, bool& to_set)
 {
+    bool const whole = std::is_integral< S >::value;
+    double const min = (double)((val + 1)->*field);
+    double const max = (double)((val + 2)->*field);
+
     ImGui::Text("%s", id);
-    int temp = val->*field;
-    int min = (val + 1)->*field;
-    int max = (val + 2)->*field;
 
     std::string* val_ptr;
-    auto edit_mode = draw_edit_button(id, temp, val_ptr);
-
-    std::string slider_id = rsutils::string::from() << "##" << id;
+    auto edit_mode = draw_edit_button(id, val->*field, val_ptr);
+    std::string const slider_id = rsutils::string::from() << "##" << id;
 
     if (*edit_mode)
     {
@@ -88,39 +91,62 @@ inline void slider_int(std::string& error_message, const char* id, T* val, S T::
         if (ImGui::InputText(slider_id.c_str(), buff, TEXT_BUFF_SIZE,
             ImGuiInputTextFlags_EnterReturnsTrue))
         {
-            int new_value = 0;
-            if (!rsutils::string::string_to_value<int>(buff, new_value))
+            double new_value = 0.;
+            bool parsed;
+            if (whole)
             {
-                error_message = "Invalid integer input!";
+                int i = 0;
+                parsed = rsutils::string::string_to_value<int>(buff, i);
+                new_value = i;
             }
             else
             {
-                // min != max steps over this check for controls whose min and max firmware has
-                // set equal to the actual value - the same escape slider_float has
-                if ((min != max) && ((new_value > max) || (new_value < min)))
-                {
-                    std::stringstream ss;
-                    ss << "New value " << new_value << " must be within [" << min << ", " << max << "] range";
-                    error_message = ss.str();
-                }
-                else
-                {
-                    val->*field = static_cast<S>(new_value);
-                    to_set = true;
-                }
+                float f = 0.f;
+                parsed = rsutils::string::string_to_value<float>(buff, f);
+                new_value = f;
+            }
+
+            if (!parsed)
+            {
+                error_message = whole ? "Invalid integer input!" : "Invalid numeric input!";
+            }
+            // min != max steps over this check for the controls whose min and max firmware has
+            // set equal to the actual value
+            else if ((min != max) && ((new_value > max) || (new_value < min)))
+            {
+                std::stringstream ss;
+                ss << "New value " << new_value << " must be within [" << min << ", " << max << "] range";
+                error_message = ss.str();
+            }
+            else
+            {
+                val->*field = static_cast<S>(new_value);
+                to_set = true;
             }
 
             *edit_mode = false;
         }
         *val_ptr = buff;
     }
-    else if (RsImGui::SliderIntWithSteps(slider_id.c_str(), &temp, min, max, 1))
+    else if (whole)
     {
-        val->*field = temp;
-        to_set = true;
+        int temp = (int)(val->*field);
+        if (RsImGui::SliderIntWithSteps(slider_id.c_str(), &temp, (int)min, (int)max, 1))
+        {
+            val->*field = static_cast<S>(temp);
+            to_set = true;
+        }
+    }
+    else
+    {
+        float temp = (float)(val->*field);
+        if (ImGui::SliderFloat(slider_id.c_str(), &temp, (float)min, (float)max))
+        {
+            val->*field = static_cast<S>(temp);
+            to_set = true;
+        }
     }
 }
-
 template<class T, class S>
 inline void checkbox(const char* id, T* val, S T::* f, bool& to_set)
 {
@@ -133,60 +159,6 @@ inline void checkbox(const char* id, T* val, S T::* f, bool& to_set)
     }
 }
 
-template<class T, class S>
-inline void slider_float(std::string& error_message, const char* id, T* val, S T::* field, bool& to_set)
-{
-    ImGui::Text("%s", id);
-    float temp = float(val->*field);
-    float min = float((val + 1)->*field);
-    float max = float((val + 2)->*field);
-
-    std::string* val_ptr;
-    auto edit_mode = draw_edit_button(id, temp, val_ptr);
-
-
-    std::string slider_id = rsutils::string::from() << "##" << id;
-
-    if (*edit_mode)
-    {
-        char buff[TEXT_BUFF_SIZE];
-        memset(buff, 0, TEXT_BUFF_SIZE);
-        strncpy(buff, val_ptr->c_str(), TEXT_BUFF_SIZE - 1);
-        if (ImGui::InputText(slider_id.c_str(), buff, TEXT_BUFF_SIZE,
-            ImGuiInputTextFlags_EnterReturnsTrue))
-        {
-            float new_value = 0;
-            if (!rsutils::string::string_to_value<float>(buff, new_value))
-            {
-                error_message = "Invalid numeric input!";
-            }
-            else
-            {
-                // min != max added in order to step over this check for controls 
-                // for which min and max have been set equal to actual value
-                if ((min != max) && ((new_value > max) || (new_value < min)))
-                {
-                    std::stringstream ss;
-                    ss << "New value " << new_value << " must be within [" << min << ", " << max << "] range";
-                    error_message = ss.str();
-                }
-                else
-                {
-                    val->*field = static_cast<S>(new_value);
-                    to_set = true;
-                }
-            }
-
-            *edit_mode = false;
-        }
-        *val_ptr = buff;
-    }
-    else if (ImGui::SliderFloat(slider_id.c_str(), &temp, min, max))
-    {
-        val->*field = static_cast<S>(temp);
-        to_set = true;
-    }
-}
 
 // One advanced-mode control: a named field of an STxxx struct, whose value, minimum and
 // maximum are vals[0..2]. Which widget suits it is not the call site's business - the range
@@ -208,12 +180,11 @@ public:
         T * const vals = _group->vals;
         bool to_set = false;
 
-        if( ! std::is_integral< S >::value )
-            slider_float( ctx.error_message, _name.c_str(), vals, _field, to_set );
-        else if( ( vals + 1 )->*_field == 0 && ( vals + 2 )->*_field <= 1 )
+        if( std::is_integral< S >::value
+            && ( vals + 1 )->*_field == 0 && ( vals + 2 )->*_field <= 1 )
             checkbox( _name.c_str(), vals, _field, to_set );
         else
-            slider_int( ctx.error_message, _name.c_str(), vals, _field, to_set );
+            slider( ctx.error_message, _name.c_str(), vals, _field, to_set );
 
         if( to_set )
             ctx.changed = true;
