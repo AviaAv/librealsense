@@ -57,6 +57,8 @@ set(COMMON_SRC
     "${CMAKE_CURRENT_LIST_DIR}/control-model.h"
     "${CMAKE_CURRENT_LIST_DIR}/control-section.h"
     "${CMAKE_CURRENT_LIST_DIR}/control-section.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/control-widgets.h"
+    "${CMAKE_CURRENT_LIST_DIR}/control-widgets.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/device-model.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/device-model.h"
     "${CMAKE_CURRENT_LIST_DIR}/subdevice-model.h"

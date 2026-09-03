@@ -2,6 +2,7 @@
 // Copyright(c) 2022 RealSense, Inc. All Rights Reserved.
 
 #include "option-model.h"
+#include "control-widgets.h"
 #include <rsutils/string/string-utilities.h>
 #include <realsense_imgui.h>
 #include <librealsense2/rs_advanced_mode.hpp>
@@ -426,45 +427,7 @@ bool option_model::draw_slider( notifications_model & model,
     }
 
     if( ! read_only )
-    {
-        ImGui::SameLine();
-        ImGui::SetCursorPosX( 280 );
-        if( ! edit_mode )
-        {
-            std::string edit_id = rsutils::string::from() << textual_icons::edit << "##" << id;
-            ImGui::PushStyleColor( ImGuiCol_Text, light_grey );
-            ImGui::PushStyleColor( ImGuiCol_TextSelectedBg, light_grey );
-            ImGui::PushStyleColor( ImGuiCol_ButtonHovered, { 1.f, 1.f, 1.f, 0.f } );
-            ImGui::PushStyleColor( ImGuiCol_Button, { 1.f, 1.f, 1.f, 0.f } );
-            if( ImGui::Button( edit_id.c_str(), { 20, 20 } ) )
-            {
-                edit_value = value_as_string();
-                edit_mode = true;
-            }
-            if( ImGui::IsItemHovered() )
-            {
-                RsImGui::CustomTooltip( "Enter text-edit mode" );
-            }
-            ImGui::PopStyleColor( 4 );
-        }
-        else
-        {
-            std::string edit_id = rsutils::string::from() << textual_icons::edit << "##" << id;
-            ImGui::PushStyleColor( ImGuiCol_Text, light_blue );
-            ImGui::PushStyleColor( ImGuiCol_TextSelectedBg, light_blue );
-            ImGui::PushStyleColor( ImGuiCol_ButtonHovered, { 1.f, 1.f, 1.f, 0.f } );
-            ImGui::PushStyleColor( ImGuiCol_Button, { 1.f, 1.f, 1.f, 0.f } );
-            if( ImGui::Button( edit_id.c_str(), { 20, 20 } ) )
-            {
-                edit_mode = false;
-            }
-            if( ImGui::IsItemHovered() )
-            {
-                RsImGui::CustomTooltip( "Exit text-edit mode" );
-            }
-            ImGui::PopStyleColor( 4 );
-        }
-    }
+        draw_edit_toggle( id, 280.f, edit_mode, edit_value, value_as_string() );
     float customWidth = 295 - ImGui::GetCursorPosX(); //set slider width from the current Xpos to the right border at 295 (the edit button pos)
     ImGui::PushItemWidth(customWidth);
     ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, black);

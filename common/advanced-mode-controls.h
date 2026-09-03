@@ -4,6 +4,7 @@
 #pragma once
 
 #include "advanced-mode-model.h"
+#include "control-widgets.h"
 #include "control-section.h"
 #include "textual-icons.h"
 
@@ -17,61 +18,12 @@
 #include <type_traits>
 
 
-template<class T>
-bool* draw_edit_button(const char* id, T val, std::string*& val_str)
-{
-    static std::map<const char*, bool> edit_mode;
-    static std::map<const char*, std::string> edit_value;
-
-    ImGui::SameLine();
-    ImGui::SetCursorPosX(268);
-    if (!edit_mode[id])
-    {
-        std::string edit_id = rsutils::string::from() 
-            << rs2::textual_icons::edit << "##" << id;
-        ImGui::PushStyleColor(ImGuiCol_Text,  { 0.8f, 0.8f, 0.8f, 1.f });
-        ImGui::PushStyleColor(ImGuiCol_TextSelectedBg, { 0.8f, 0.8f, 0.8f, 1.f } );
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 1.f,1.f,1.f,0.f });
-        ImGui::PushStyleColor(ImGuiCol_Button, { 1.f,1.f,1.f,0.f });
-        if (ImGui::Button(edit_id.c_str(), { 20, 20 }))
-        {
-            edit_value[id] = rsutils::string::from( val );
-            edit_mode[id] = true;
-        }
-        if (ImGui::IsItemHovered())
-        {
-            RsImGui::CustomTooltip("Enter text-edit mode");
-        }
-        ImGui::PopStyleColor(4);
-    }
-    else
-    {
-        std::string edit_id = rsutils::string::from()   
-            << rs2::textual_icons::edit << "##" << id;
-        ImGui::PushStyleColor(ImGuiCol_Text,  { 0.8f, 0.8f, 1.f, 1.f });
-        ImGui::PushStyleColor(ImGuiCol_TextSelectedBg,  { 0.8f, 0.8f, 1.f, 1.f });
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 1.f,1.f,1.f,0.f });
-        ImGui::PushStyleColor(ImGuiCol_Button, { 1.f,1.f,1.f,0.f });
-        if (ImGui::Button(edit_id.c_str(), { 20, 20 }))
-        {
-            edit_mode[id] = false;
-        }
-        if (ImGui::IsItemHovered())
-        {
-            RsImGui::CustomTooltip("Exit text-edit mode");
-        }
-        ImGui::PopStyleColor(4);
-    }
-
-    val_str = &edit_value[id];
-    return &edit_mode[id];
-}
-
 // One slider for every advanced-mode field. A whole-number field gets the same integer widget
 // an integer option gets; the rest get the float one. Both share the text-edit box beside them,
 // and the range check that lets you type into a control firmware has pinned to a single value.
 template<class T, class S>
-inline void slider(std::string& error_message, const char* id, T* val, S T::* field, bool& to_set)
+inline void slider(std::string& error_message, const char* id, T* val, S T::* field, bool& to_set,
+                   bool& edit_mode, std::string& edit_value)
 {
     bool const whole = std::is_integral< S >::value;
     double const min = (double)((val + 1)->*field);
@@ -79,15 +31,15 @@ inline void slider(std::string& error_message, const char* id, T* val, S T::* fi
 
     ImGui::Text("%s", id);
 
-    std::string* val_ptr;
-    auto edit_mode = draw_edit_button(id, val->*field, val_ptr);
+    rs2::draw_edit_toggle(id, 268.f, edit_mode, edit_value,
+                          rsutils::string::from() << val->*field);
     std::string const slider_id = rsutils::string::from() << "##" << id;
 
-    if (*edit_mode)
+    if (edit_mode)
     {
         char buff[TEXT_BUFF_SIZE];
         memset(buff, 0, TEXT_BUFF_SIZE);
-        strncpy(buff, val_ptr->c_str(), TEXT_BUFF_SIZE - 1);
+        strncpy(buff, edit_value.c_str(), TEXT_BUFF_SIZE - 1);
         if (ImGui::InputText(slider_id.c_str(), buff, TEXT_BUFF_SIZE,
             ImGuiInputTextFlags_EnterReturnsTrue))
         {
@@ -124,9 +76,9 @@ inline void slider(std::string& error_message, const char* id, T* val, S T::* fi
                 to_set = true;
             }
 
-            *edit_mode = false;
+            edit_mode = false;
         }
-        *val_ptr = buff;
+        edit_value = buff;
     }
     else if (whole)
     {
@@ -184,7 +136,8 @@ public:
             && ( vals + 1 )->*_field == 0 && ( vals + 2 )->*_field <= 1 )
             checkbox( _name.c_str(), vals, _field, to_set );
         else
-            slider( ctx.error_message, _name.c_str(), vals, _field, to_set );
+            slider( ctx.error_message, _name.c_str(), vals, _field, to_set,
+                    _edit_mode, _edit_value );
 
         if( to_set )
             ctx.changed = true;
@@ -194,6 +147,8 @@ private:
     std::string _name;
     param_group< T > * _group;
     S T::* _field;
+    bool _edit_mode = false;      // this control's text box, if the user asked for one
+    std::string _edit_value;
 };
 
 template< class T, class S >
