@@ -25,6 +25,7 @@ namespace rs2
         float windows_width = 0.f;
         bool update_read_only_options = false;
         bool is_streaming = false;
+        std::string filter;      // lowercase; empty shows everything
         bool changed = false;    // set by anything the user touched
     };
 
