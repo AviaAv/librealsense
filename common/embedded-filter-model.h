@@ -32,12 +32,11 @@ namespace rs2
             bool* options_invalidated,
             std::string& error_message );
 
-        void draw_options( viewer_model & viewer,
-                           bool update_read_only_options,
-                           bool is_streaming,
-                           std::string & error_message );
-
         std::shared_ptr<rs2::embedded_filter> get_filter() { return _embedded_filter; }
+
+        // The options this filter draws, in map order - all but the enable option, which is this
+        // filter's own toggle beside its name
+        std::vector< option_model * > drawable_options();
 
         void enable( bool e = true )
         {
