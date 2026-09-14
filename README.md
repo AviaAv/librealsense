@@ -6,4 +6,6 @@
 
 **Build Customization Flags are available [here](https://realsenseai.github.io/librealsense/build-flags-docs/build-flags.html)**
 
+**The SDK Privacy Policy is available [here](https://realsenseai.github.io/librealsense/privacy-policy.html)**
+
 On each release the API documentation will be updated and pushed to this branch
