@@ -11,7 +11,7 @@
  *   DEVICE_SERIAL=xxx - Target specific device serial number
  */
 
-import { test as base, expect, Page } from '@playwright/test'
+import { test as base, expect, Locator, Page } from '@playwright/test'
 
 /**
  * Test mode - mock (default) or real device
@@ -159,6 +159,34 @@ export { expect }
  */
 export async function dismissWhatsNewModal(page: Page): Promise<void> {
   return dismissWhatsNewModalInternal(page)
+}
+
+/**
+ * Keep the welcome modal from opening at all, rather than racing to dismiss it.
+ * WhatsNew.tsx reopens whenever the stored version differs from the one /health
+ * reports, so the marker has to carry the live value.
+ */
+export async function suppressWelcomeModal(page: Page): Promise<void> {
+  const response = await fetch(`${getApiUrl()}/api/v1/health`)
+  const { sdk_version } = await response.json()
+  await page.addInitScript((version: string) => {
+    localStorage.setItem('rs-sdk-last-shown', version)
+  }, sdk_version)
+}
+
+/** Clicks every match, re-resolving each time, ignoring ones that vanish mid-loop. */
+export async function clickAll(locator: Locator): Promise<void> {
+  for (let remaining = await locator.count(); remaining > 0; remaining--) {
+    await locator.first().click().catch(() => {})
+  }
+}
+
+/**
+ * Toasts render fixed over the whole app, so a firmware-update prompt can swallow
+ * a click meant for the UI underneath.
+ */
+export async function dismissToasts(page: Page): Promise<void> {
+  return clickAll(page.getByRole('button', { name: 'Close' }))
 }
 
 /**

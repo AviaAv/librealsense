@@ -693,6 +693,7 @@ function SensorPanel({
   return (
     <Collapsible
       variant="sensor"
+      testId="sensor-module"
       label={
         <>
           <span className="text-sm font-semibold text-rs-text truncate">{sensor.name}</span>
@@ -1057,7 +1058,7 @@ function OptionControl({ option, onSet }: OptionControlProps) {
   }
 
   return (
-    <div className="bg-rs-inset/50 border border-rs-border/50 rounded p-1.5 text-xs">
+    <div className="bg-rs-inset/50 border border-rs-border/50 rounded p-1.5 text-xs" data-testid={`option-${option.option_id}`}>
       <div className="flex items-center justify-between mb-0.5">
         <label className="font-medium truncate text-rs-text flex-1" title={option.description}>
           {optionLabel(option.option_id)}
