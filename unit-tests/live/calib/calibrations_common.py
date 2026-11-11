@@ -91,6 +91,7 @@ def calibration_main(config, pipeline, calib_dev, occ_calib, json_config, ground
             depth_sensor.set_option(rs.option.emitter_enabled, 1)    
     if depth_sensor.supports(rs.option.thermal_compensation):
         depth_sensor.set_option(rs.option.thermal_compensation, 0)
+    depth_sensor.set_option(rs.option.enable_auto_exposure, 1)
 
     new_calib_result = b''
     # Execute calibration based on type
@@ -169,6 +170,7 @@ def measure_average_depth(config, pipe, width=640, height=480, fps=30, frames=10
                 depth_sensor.set_option(rs.option.emitter_enabled, 1)
             if depth_sensor.supports(rs.option.thermal_compensation):
                 depth_sensor.set_option(rs.option.thermal_compensation, 0)
+            depth_sensor.set_option(rs.option.enable_auto_exposure, 1)
             depth_scale = depth_sensor.get_depth_scale()
         except Exception:
             # Fallback default RealSense depth scale (commonly 0.001) if retrieval fails
@@ -250,6 +252,7 @@ def measure_depth_fill_rate(config, pipe, width=640, height=480, fps=30, frames=
                 depth_sensor.set_option(rs.option.emitter_enabled, 1)
             if depth_sensor.supports(rs.option.thermal_compensation):
                 depth_sensor.set_option(rs.option.thermal_compensation, 0)
+            depth_sensor.set_option(rs.option.enable_auto_exposure, 1)
             depth_scale = depth_sensor.get_depth_scale()
         except Exception:
             depth_scale = 0.001

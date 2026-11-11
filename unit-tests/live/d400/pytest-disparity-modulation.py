@@ -18,12 +18,16 @@ def _test_amp_factor(am_device, input_factor_values: list):
     :input_factor_values: list of A Factor values
     """
     amp_factor = am_device.get_amp_factor()
+    original_factor = amp_factor.a_factor
     output_factor_values = []
 
     for factor_value in input_factor_values:
         amp_factor.a_factor = factor_value
         am_device.set_amp_factor(amp_factor)
         output_factor_values.append(am_device.get_amp_factor().a_factor)
+
+    amp_factor.a_factor = original_factor
+    am_device.set_amp_factor(amp_factor)
 
     assert output_factor_values == pytest.approx(input_factor_values, abs=1e-6)
 

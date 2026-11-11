@@ -4,6 +4,7 @@
 import logging
 
 import pytest
+import pyrealsense2 as rs
 
 import hdr_helper
 
@@ -13,6 +14,13 @@ pytestmark = [
     pytest.mark.device_each("D455"),
     pytest.mark.device_each("D457"),
 ]
+
+
+@pytest.fixture(autouse=True)
+def _disable_hdr(test_device):
+    yield
+    test_device[0].first_depth_sensor().set_option(rs.option.hdr_enabled, 0)
+
 
 MANUAL_HDR_CONFIG = {
     "hdr-preset": {

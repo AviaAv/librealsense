@@ -49,6 +49,11 @@ def setup_depth_watcher(test_device):
     # Disable it here so every test starts with AE off, including a rerun after a device recycle.
     if _depth_sensor.get_option(rs.option.enable_auto_exposure) != 0:
         _depth_sensor.set_option(rs.option.enable_auto_exposure, 0)
+    # a previous test file may have left gain/exposure at max, where the tests' +1 would throw
+    for opt in (rs.option.gain, rs.option.exposure):
+        r = _depth_sensor.get_option_range(opt)
+        if _depth_sensor.get_option(opt) >= r.max:
+            _depth_sensor.set_option(opt, r.default)
     _depth_sensor.on_options_changed(callback)
     time.sleep(0.5)  # let the options-watcher establish its baseline before making changes
     return _depth_sensor, count

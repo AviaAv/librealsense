@@ -38,6 +38,16 @@ def _require_auto_limit_support(test_device):
     require_min_fw_version(dev, rsutils.version(5, 12, 10, 11), "AUTO EXPOSURE LIMIT")
     _depth_sensor = sensor  # set only after all checks pass
 
+
+@pytest.fixture(scope="module", autouse=True)
+def _disable_auto_limits(test_device):
+    # the tests leave both limits on; they would cap auto exposure in later test files
+    yield
+    sensor = test_device[0].first_depth_sensor()
+    for toggle in (rs.option.auto_exposure_limit_toggle, rs.option.auto_gain_limit_toggle):
+        if sensor.supports(toggle):
+            sensor.set_option(toggle, 0)
+
 # 1. Scenario 1:
     #          - Change control value few times
     #         - Turn toggle off

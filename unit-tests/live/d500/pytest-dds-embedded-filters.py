@@ -142,6 +142,7 @@ def test_decimation_embedded_filter_metadata(depth_sensor, depth_profile, fw_ver
         decimation_embedded_filter.set_option(rs.option.embedded_filter_enabled, 0.0)
         check.equal(decimation_embedded_filter.get_option(rs.option.embedded_filter_enabled), 0.0)
 
+    disable_decimation_filter()
     state["decimation_enabled"] = False
     stream_and_check_decimation_filter()
     time.sleep(1)

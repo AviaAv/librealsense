@@ -1685,6 +1685,10 @@ def settled_device(test_device):
     recycled and needs to settle again).
     """
     dev, ctx = test_device
+    # a previous test file may have left manual exposure too long for high fps
+    for s in dev.query_sensors():
+        if s.supports(rs.option.enable_auto_exposure):
+            s.set_option(rs.option.enable_auto_exposure, 1)
     time.sleep(DEVICE_INIT_SLEEP_SEC)
     return dev, ctx
 

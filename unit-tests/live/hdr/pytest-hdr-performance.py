@@ -60,6 +60,12 @@ class FrameCounter:
             return self.count
 
 
+@pytest.fixture(autouse=True)
+def _disable_hdr(test_device):
+    yield
+    test_device[0].first_depth_sensor().set_option(rs.option.hdr_enabled, 0)
+
+
 def test_hdr_performance(test_device):
     """
     Test HDR performance with various configurations

@@ -204,6 +204,8 @@ def safety_presets(test_device, request):
     dev, ctx = test_device
     sensor = dev.first_safety_sensor()
     assert sensor.supports(rs.option.safety_preset_active_index)
+    orig_index = sensor.get_option(rs.option.safety_preset_active_index)
+    request.addfinalizer(lambda: sensor.set_option(rs.option.safety_preset_active_index, orig_index))
 
     def restore(index, preset):
         tw.start_wrapper(dev)

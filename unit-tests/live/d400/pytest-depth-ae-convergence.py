@@ -249,6 +249,8 @@ def _prepare_depth_ae_sensor(dev):
     # Check AE mode support
     supports_mode = sensor.supports(rs.option.auto_exposure_mode)
     log.info(f"Depth AE mode: [{supports_mode}]")
+    if supports_mode:
+        sensor.set_option(rs.option.auto_exposure_mode, REGULAR)
 
     # Candidate depth profiles (resolution + fps); exclude frame rates lower than 15 fps
     depth_profiles = [p for p in sensor.profiles if p.stream_type() == rs.stream.depth and p.fps() >= 15]

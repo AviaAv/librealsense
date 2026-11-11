@@ -171,6 +171,8 @@ def test_syncer_dynamic_fps_throughput(test_device, with_rgb):
         ir_sensor.set_option(rs.option.enable_auto_exposure, 0)
     if rgb_sensor.supports(rs.option.enable_auto_exposure):
         rgb_sensor.set_option(rs.option.enable_auto_exposure, 0)
+    if rgb_sensor.supports(rs.option.exposure):
+        rgb_sensor.set_option(rs.option.exposure, rgb_sensor.get_option_range(rs.option.exposure).default)
 
     log.info(f"Configuration: {'IR+RGB' if with_rgb else 'IR only'}")
 
@@ -197,6 +199,11 @@ def test_syncer_dynamic_fps_throughput(test_device, with_rgb):
         if rgb_opened:   rgb_sensor.close()
         if ir_sensor.supports(rs.option.exposure):
             ir_sensor.set_option(rs.option.exposure, 1)
+        for s in sensors:
+            if s.supports(rs.option.enable_auto_exposure):
+                s.set_option(rs.option.enable_auto_exposure, 1)
+            if s.supports(rs.option.global_time_enabled):
+                s.set_option(rs.option.global_time_enabled, 1)
 
     _analyse(ir_info, "Infrared 1")
     if with_rgb:

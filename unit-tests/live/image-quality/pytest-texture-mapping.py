@@ -116,6 +116,8 @@ def run_test(dev, ctx, depth_resolution, depth_fps, color_resolution, color_fps)
             return
 
         depth_sensor = dev.first_depth_sensor()
+        if depth_sensor.supports(rs.option.emitter_enabled):
+            depth_sensor.set_option(rs.option.emitter_enabled, 1)
         depth_sensor.set_option(rs.option.exposure, 10000) # on auto exposure we see more failures on sampling
 
         pipeline_profile = pipeline.start(cfg)
@@ -249,6 +251,11 @@ def run_test(dev, ctx, depth_resolution, depth_fps, color_resolution, color_fps)
 
 def test_texture_mapping(test_device, test_context_var):
     dev, ctx = test_device
+    # expected colors assume auto exposure and white balance; a previous test file may have turned them off
+    for s in dev.query_sensors():
+        if s.supports(rs.option.enable_auto_white_balance):
+            s.set_option(rs.option.enable_auto_exposure, 1)
+            s.set_option(rs.option.enable_auto_white_balance, 1)
 
     configurations = DEFAULT_CONFIGURATIONS
     # on nightly we check additional arbitrary configurations

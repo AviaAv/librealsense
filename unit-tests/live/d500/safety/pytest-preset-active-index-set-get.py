@@ -17,7 +17,9 @@ pytestmark = [
 @pytest.fixture
 def safety_sensor(test_device):
     dev, _ = test_device
-    return dev.first_safety_sensor()
+    sensor = dev.first_safety_sensor()
+    yield sensor
+    sensor.set_option(rs.option.safety_preset_active_index, 0)
 
 
 def test_safety_sensor_supports_option(safety_sensor):
@@ -25,7 +27,7 @@ def test_safety_sensor_supports_option(safety_sensor):
 
 
 def test_valid_get_set_active_index(safety_sensor):
-    # default index at start should be 0
+    safety_sensor.set_option(rs.option.safety_preset_active_index, 0)
     current_index = safety_sensor.get_option(rs.option.safety_preset_active_index)
     assert int(current_index) == 0
 

@@ -94,6 +94,8 @@ def draw_debug(depth_frame, cube_xy, depth_cube, depth_bg, measured_diff):
 def run_test(dev, ctx, resolution, fps):
     log.info(f"Basic Depth Image Quality Test: {resolution[0]}x{resolution[1]} @ {fps}fps")
     depth_sensor = dev.first_depth_sensor()
+    if depth_sensor.supports(rs.option.emitter_enabled):
+        depth_sensor.set_option(rs.option.emitter_enabled, 1)
     last_depth_frame = None
     last_depth_cube = 0
     last_depth_bg = 0

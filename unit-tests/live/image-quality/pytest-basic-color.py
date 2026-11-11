@@ -168,6 +168,11 @@ def run_test(dev, ctx, resolution, fps):
 
 def test_basic_color(test_device, test_context_var):
     dev, ctx = test_device
+    # expected colors assume auto exposure and white balance; a previous test file may have turned them off
+    for s in dev.query_sensors():
+        if s.supports(rs.option.enable_auto_white_balance):
+            s.set_option(rs.option.enable_auto_exposure, 1)
+            s.set_option(rs.option.enable_auto_white_balance, 1)
 
     configurations = DEFAULT_CONFIGURATIONS
     # on nightly we check additional arbitrary configurations

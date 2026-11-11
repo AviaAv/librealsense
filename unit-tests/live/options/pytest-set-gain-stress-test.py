@@ -23,6 +23,15 @@ TEST_ITERATIONS = 200
 GAIN_VALUES = [16, 74, 132, 190, 248]
 
 
+@pytest.fixture(autouse=True)
+def _restore_auto_exposure(test_device_wrapped):
+    # the test leaves exposure at 1; don't hand that to the next test file
+    yield
+    sensor = test_device_wrapped[0].first_depth_sensor()
+    if sensor.supports(rs.option.enable_auto_exposure):
+        sensor.set_option(rs.option.enable_auto_exposure, 1)
+
+
 def test_set_gain_stress(test_device_wrapped):
     """Stress test for setting a PU (gain) option — no exception should be thrown [RSDSO-17185]."""
     dev, ctx = test_device_wrapped

@@ -39,7 +39,7 @@ def depth_sensor(test_device_wrapped):
 
 
 def test_verify_camera_ae_mode_default_is_regular(depth_sensor):
-    assert depth_sensor.get_option(rs.option.auto_exposure_mode) == REGULAR
+    assert depth_sensor.get_option_range(rs.option.auto_exposure_mode).default == REGULAR
 
 
 def test_verify_can_set_when_auto_exposure_on(depth_sensor):

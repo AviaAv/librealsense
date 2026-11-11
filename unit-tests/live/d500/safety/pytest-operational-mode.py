@@ -38,8 +38,9 @@ def test_pause_resume_no_impact_on_streaming(test_context):
 
         pipeline_device = profile.get_device()
         safety_sensor = pipeline_device.first_safety_sensor()
-        log.debug("Verify default is run mode")
-        check.equal(safety_sensor.get_option(rs.option.safety_mode), float(rs.safety_mode.run))  # verify default
+        log.debug("Command run mode")
+        tw.set_safety_mode(safety_sensor, rs.safety_mode.run)
+        check.equal(safety_sensor.get_option(rs.option.safety_mode), float(rs.safety_mode.run))
 
         log.debug("Command standby mode")
         tw.set_safety_mode(safety_sensor, rs.safety_mode.standby)

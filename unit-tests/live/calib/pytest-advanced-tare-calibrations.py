@@ -79,6 +79,7 @@ def calculate_target_z():
     pipe = rs.pipeline(ctx)
     pp = pipe.start(cfg, cb)
     dev = pp.get_device()
+    dev.first_depth_sensor().set_option(rs.option.enable_auto_exposure, 1)
 
     try:
         stime = time.time()

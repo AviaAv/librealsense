@@ -39,6 +39,9 @@ def test_emitter_on_off_set_get(test_device):
     try:
         time.sleep(2)
         pipe.wait_for_frames()
+        # emitter always on blocks emitter on/off; a previous test file may have left it set
+        if depth_sensor.supports(rs.option.emitter_always_on):
+            depth_sensor.set_option(rs.option.emitter_always_on, 0)
 
         # ON: the emitter alternates on/off per frame
         depth_sensor.set_option(rs.option.emitter_on_off, 1)

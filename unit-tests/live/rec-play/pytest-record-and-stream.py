@@ -45,6 +45,7 @@ def record(file_name, default_profile):
     # Change the option only after frames are flowing (up to 5s for the first one), as the test intends
     frame_queue.wait_for_frame(5000)
     time.sleep(1)
+    emitter = None
     if depth_sensor.supports(rs.option.emitter_enabled):
         try:
             emitter = depth_sensor.get_option(rs.option.emitter_enabled)
@@ -58,6 +59,8 @@ def record(file_name, default_profile):
 
     depth_sensor.stop()
     depth_sensor.close()
+    if emitter is not None:
+        depth_sensor.set_option(rs.option.emitter_enabled, emitter)
 
 
 def try_streaming(default_profile):

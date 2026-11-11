@@ -10,6 +10,7 @@ import pytest
 import pyrealsense2 as rs
 import d401_helper as helper
 from d401_helper import COLOR0, COLOR1, DEPTH, IR2
+from rspy import devices
 
 pytestmark = [
     pytest.mark.device_each( "D401" ),
@@ -21,9 +22,13 @@ W, H = 848, 480
 
 
 @pytest.fixture( scope="module", autouse=True )
-def require_dual_rgb( test_device ):
+def require_dual_rgb( request, test_device ):
     dev, _ = test_device
     helper.skip_without_color1( dev )
+    yield
+    # back to ISP needs a reset, which the infra doesn't do between files under --no-reset
+    if request.config.getoption( "--no-reset" ):
+        devices.enable_only( [dev.get_info( rs.camera_info.serial_number )], recycle=True )
 
 
 @pytest.fixture
